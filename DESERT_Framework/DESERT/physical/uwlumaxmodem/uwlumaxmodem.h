@@ -5,6 +5,7 @@
 
 #include <uwconnector.h>
 #include <uwmodem.h>
+#include "uwinterpreterlumax.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -34,7 +35,7 @@ private:
 	/** Pointer to Connector object that interfaces with the device */
 	std::unique_ptr<UwConnector> p_connector;
 	// /** Pointer to Interpreter object to parse device syntax */
-	// std::unique_ptr<UwInterpreterS2C> p_interpreter;
+	std::unique_ptr<UwInterpreterLumaX> p_interpreter;
 	/** Mutex associated with the state machine of the modem */
 	std::mutex status_m;
 	/** Mutex associated with the transmission state machine of the modem */

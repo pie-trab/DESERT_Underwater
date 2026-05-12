@@ -9,11 +9,11 @@
 #include <vector>
 
 
-class UwInterpreterS2C
+class UwInterpreterLumaX 
 {
 public:
-
-
+    virtual int parse(char* buffer);
+    virtual int retrievePayload(std::string message);
 };
 
 #endif
