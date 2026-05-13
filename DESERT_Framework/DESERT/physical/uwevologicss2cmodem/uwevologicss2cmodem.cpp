@@ -616,6 +616,7 @@ UwEvoLogicsS2CModem::start()
 
 	tx_thread = std::thread(&UwEvoLogicsS2CModem::transmittingData, this);
 
+	// DUBBIO cosa fa sta questa cosa e come mai viene chiamato solo una volta (non mi pare sia in un thread)
 	checkTimer = new CheckTimer(this);
 	checkTimer->resched(period);
 }

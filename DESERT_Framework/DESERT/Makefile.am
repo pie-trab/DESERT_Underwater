@@ -59,6 +59,7 @@ SUBDIRS = m4 \
     physical/uwconnector \
     physical/uwmodemcsa \
     physical/uwevologicss2cmodem \
+    physical/uwlumaxmodem \
     physical/uwmphypatch \
     physical/uwhermesphy \
     physical/uwofdmphy \

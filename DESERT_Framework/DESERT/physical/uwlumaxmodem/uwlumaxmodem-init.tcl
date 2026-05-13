@@ -27,12 +27,15 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-# TODO check these and see if they are correct and/or need to be changed
+# Default parameters for the transparent LumaX socket driver.
+#
+# bitrate and tx_overhead are used only to answer MAC TX-duration queries.
+# Leave bitrate at 0 if no reliable estimate is available yet.
 
-Module/UW/UwModem/LumaX set TxPower_  0
-Module/UW/UwModem/LumaX set NoiseSPD_ 0
-Module/UW/UwModem/LumaX set modemID   0
-Module/UW/UwModem/LumaX set debug_    0
-Module/UW/UwModem/LumaX set period_    0.1
-Module/UW/UwModem/LumaX set max_read_size    2000
-Module/UW/UwModem/LumaX set buffer_size    2000
+Module/UW/UwModem/LumaX set ID_              0
+Module/UW/UwModem/LumaX set debug_          0
+Module/UW/UwModem/LumaX set period_         0.1
+Module/UW/UwModem/LumaX set max_read_size   4096
+Module/UW/UwModem/LumaX set buffer_size     4096
+Module/UW/UwModem/LumaX set bitrate         0
+Module/UW/UwModem/LumaX set tx_overhead     0
