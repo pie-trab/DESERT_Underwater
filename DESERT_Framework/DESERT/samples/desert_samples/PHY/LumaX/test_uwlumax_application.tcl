@@ -13,6 +13,14 @@
 #
 # If one PC can reach both modem IPs, the same two commands can be run from
 # two terminals on that PC.
+#
+# Local no-hardware loopback test:
+#
+#   Terminal 1:
+#     ns test_uwlumax_application.tcl 2 1 5 60 0 127.0.0.1 5555 16 TCP 0 0 SERVER
+#
+#   Terminal 2:
+#     ns test_uwlumax_application.tcl 1 2 5 60 5 127.0.0.1 5555 16 TCP 0 0 CLIENT
 
 set opt(node)        1
 set opt(dest)        2
@@ -25,10 +33,11 @@ set opt(pktsize)     16
 set opt(conn_proto)  "UDP"
 set opt(bitrate)     0
 set opt(tx_overhead) 0
+set opt(conn_role)   "CLIENT"
 
 proc printUsage {} {
     puts "Usage:"
-    puts "  ns test_uwlumax_application.tcl node_id dest_id start stop traffic_period modem_ip modem_port pkt_size ?UDP|TCP? ?bitrate_bps? ?tx_overhead_s?"
+    puts "  ns test_uwlumax_application.tcl node_id dest_id start stop traffic_period modem_ip modem_port pkt_size ?UDP|TCP? ?bitrate_bps? ?tx_overhead_s? ?CLIENT|SERVER?"
     puts ""
     puts "Arguments:"
     puts "  node_id        DESERT node/MAC/IP address of this node"
@@ -42,9 +51,10 @@ proc printUsage {} {
     puts "  UDP|TCP        optional connector protocol, default UDP"
     puts "  bitrate_bps    optional TX-duration estimate, default 0/unknown"
     puts "  tx_overhead_s  optional fixed TX-duration overhead, default 0"
+    puts "  CLIENT|SERVER  optional socket role; SERVER is useful for TCP loopback tests"
 }
 
-if {$argc < 8 || $argc > 11} {
+if {$argc < 8 || $argc > 12} {
     printUsage
     exit
 }
@@ -67,9 +77,24 @@ if {$argc >= 10} {
 if {$argc >= 11} {
     set opt(tx_overhead) [lindex $argv 10]
 }
+if {$argc >= 12} {
+    set opt(conn_role) [string toupper [lindex $argv 11]]
+}
 
 if {$opt(conn_proto) != "UDP" && $opt(conn_proto) != "TCP"} {
     puts "Invalid connector protocol: $opt(conn_proto)"
+    printUsage
+    exit
+}
+
+if {$opt(conn_role) != "CLIENT" && $opt(conn_role) != "SERVER"} {
+    puts "Invalid connector role: $opt(conn_role)"
+    printUsage
+    exit
+}
+
+if {$opt(conn_role) == "SERVER" && $opt(conn_proto) != "TCP"} {
+    puts "SERVER role is only supported by this loopback sample with TCP"
     printUsage
     exit
 }
@@ -111,7 +136,11 @@ $ns use-scheduler RealTime
 ##################
 # Tcl variables  #
 ##################
-set modem_address "${opt(ip)}:${opt(port)}"
+if {$opt(conn_role) == "SERVER"} {
+    set modem_address "$opt(port)"
+} else {
+    set modem_address "${opt(ip)}:${opt(port)}"
+}
 set time_stop [expr $opt(stop) + 5]
 set tf_name "uwlumax_node_${opt(node)}.tr"
 
@@ -225,6 +254,9 @@ proc createNode {} {
         $modem_ setUDP
     } else {
         $modem_ setTCP
+        if {$opt(conn_role) == "SERVER"} {
+            $modem_ setServer
+        }
     }
 
     set packer_ [new UW/AL/Packer]

@@ -1,9 +1,9 @@
 #ifndef UWLUMAXMODEM_H
 #define UWLUMAXMODEM_H
 
+#include "uwinterpreterlumax.h"
 #include <uwconnector.h>
 #include <uwmodem.h>
-#include "uwinterpreterlumax.h"
 
 #include <atomic>
 #include <chrono>

@@ -10,7 +10,7 @@ UwInterpreterLumaX::findResponse(std::vector<char>::iterator beg,
 
 	rsp = beg;
 	return Response::DATA;
-}
+} 
 
 bool
 UwInterpreterLumaX::parseResponse(Response rsp, std::vector<char>::iterator end,
