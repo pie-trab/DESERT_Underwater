@@ -64,6 +64,44 @@ UwLumaXModem::~UwLumaXModem()
 }
 
 void
+UwLumaXModem::start()
+{
+	if (modem_address == "") {
+		std::cout << "ERROR: Modem address not set!" << std::endl;
+		printOnLog(LogLevel::ERROR, "LUMAXMODEM", "start::ADDRESS_NOT_SET");
+		return;
+	}
+
+	if (DATA_BUFFER_LEN == 0) {
+		DATA_BUFFER_LEN = 4096;
+	}
+	if (MAX_READ_BYTES <= 0) {
+		MAX_READ_BYTES = DATA_BUFFER_LEN;
+	}
+
+	printOnLog(LogLevel::DEBUG, "LUMAXMODEM", "start::OPEN_CONNECTION");
+
+	if (!p_connector->openConnection(modem_address)) {
+		std::cout << "ERROR: connection to modem failed to open: "
+				  << modem_address << std::endl;
+		printOnLog(
+				LogLevel::ERROR, "LUMAXMODEM", "start::CONNECTION_OPEN_FAILED");
+		return;
+	}
+
+	receiving.store(true);
+	transmitting.store(true);
+
+	rx_thread = std::thread(&UwLumaXModem::receivingData, this);
+	tx_thread = std::thread(&UwLumaXModem::transmittingData, this);
+
+	if (checkTimer == NULL) {
+		checkTimer = new CheckTimer(this);
+	}
+	checkTimer->resched(period);
+}
+
+void
 UwLumaXModem::recv(Packet *p)
 {
 	hdr_cmn *ch = HDR_CMN(p);
@@ -172,44 +210,6 @@ UwLumaXModem::getTxDuration(Packet *p)
 }
 
 void
-UwLumaXModem::start()
-{
-	if (modem_address == "") {
-		std::cout << "ERROR: Modem address not set!" << std::endl;
-		printOnLog(LogLevel::ERROR, "LUMAXMODEM", "start::ADDRESS_NOT_SET");
-		return;
-	}
-
-	if (DATA_BUFFER_LEN == 0) {
-		DATA_BUFFER_LEN = 4096;
-	}
-	if (MAX_READ_BYTES <= 0) {
-		MAX_READ_BYTES = DATA_BUFFER_LEN;
-	}
-
-	printOnLog(LogLevel::DEBUG, "LUMAXMODEM", "start::OPEN_CONNECTION");
-
-	if (!p_connector->openConnection(modem_address)) {
-		std::cout << "ERROR: connection to modem failed to open: "
-				  << modem_address << std::endl;
-		printOnLog(
-				LogLevel::ERROR, "LUMAXMODEM", "start::CONNECTION_OPEN_FAILED");
-		return;
-	}
-
-	receiving.store(true);
-	transmitting.store(true);
-
-	rx_thread = std::thread(&UwLumaXModem::receivingData, this);
-	tx_thread = std::thread(&UwLumaXModem::transmittingData, this);
-
-	if (checkTimer == NULL) {
-		checkTimer = new CheckTimer(this);
-	}
-	checkTimer->resched(period);
-}
-
-void
 UwLumaXModem::stop()
 {
 	receiving.store(false);
@@ -223,9 +223,8 @@ UwLumaXModem::stop()
 	}
 
 	if (p_connector->isConnected() && !p_connector->closeConnection()) {
-		printOnLog(LogLevel::ERROR,
-				"LUMAXMODEM",
-				"stop::CONNECTION_CLOSE_FAIL");
+		printOnLog(
+				LogLevel::ERROR, "LUMAXMODEM", "stop::CONNECTION_CLOSE_FAIL");
 	}
 
 	if (rx_thread.joinable()) {
@@ -244,8 +243,7 @@ UwLumaXModem::transmittingData()
 {
 	while (transmitting.load()) {
 		std::unique_lock<std::mutex> tx_lock(tx_queue_m);
-		tx_queue_cv.wait(
-				tx_lock,
+		tx_queue_cv.wait(tx_lock,
 				[&] { return !tx_queue.empty() || !transmitting.load(); });
 		if (!transmitting.load()) {
 			break;
@@ -275,9 +273,11 @@ UwLumaXModem::receivingData()
 			std::min(MAX_READ_BYTES, static_cast<int>(DATA_BUFFER_LEN));
 
 	while (receiving.load()) {
-		// Transparent mode assumes one connector read maps to one modem payload.
-		// Add framing in UwInterpreterLumaX if the socket becomes a byte stream.
-		int r_bytes = p_connector->readFromDevice(data_buffer.data(), read_size);
+		// Transparent mode assumes one connector read maps to one modem
+		// payload. Add framing in UwInterpreterLumaX if the socket becomes a
+		// byte stream.
+		int r_bytes =
+				p_connector->readFromDevice(data_buffer.data(), read_size);
 
 		if (r_bytes <= 0) {
 			if (receiving.load()) {
@@ -340,8 +340,7 @@ UwLumaXModem::completeTx(Packet *p, bool success)
 	}
 	status_cv.notify_all();
 
-	std::function<void(UwModem &, Packet * p)> callback =
-			&UwModem::realTxEnded;
+	std::function<void(UwModem &, Packet * p)> callback = &UwModem::realTxEnded;
 	ModemEvent e = {callback, p};
 	event_q.push(e);
 }
@@ -369,8 +368,8 @@ UwLumaXModem::startTx(Packet *p)
 	state_lock.unlock();
 
 	int written = p_connector->writeToDevice(payload);
-	bool success = payload.empty() ||
-			written >= static_cast<int>(payload.size());
+	bool success =
+			payload.empty() || written >= static_cast<int>(payload.size());
 
 	if (!success) {
 		printOnLog(LogLevel::ERROR,

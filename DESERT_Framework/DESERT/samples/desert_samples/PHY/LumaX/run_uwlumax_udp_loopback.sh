@@ -15,8 +15,8 @@ STOP="${3:-60}"
 TRAFFIC="${4:-5}"
 PKTSIZE="${5:-16}"
 
-echo "Starting LumaX TCP loopback receiver on 127.0.0.1:${PORT}"
-ns test_uwlumax_application.tcl 2 1 "$START" "$STOP" 0 127.0.0.1 "$PORT" "$PKTSIZE" TCP 0 0 SERVER &
+echo "Starting LumaX UDP loopback receiver on 127.0.0.1:${PORT}"
+ns test_uwlumax_application.tcl 2 1 "$START" "$STOP" 0 127.0.0.1 "$PORT" "$PKTSIZE" UDP 0 0 SERVER &
 SERVER_PID=$!
 
 cleanup() {
@@ -28,7 +28,7 @@ trap cleanup EXIT
 
 sleep 1
 
-echo "Starting LumaX TCP loopback transmitter toward 127.0.0.1:${PORT}"
-ns test_uwlumax_application.tcl 1 2 "$START" "$STOP" "$TRAFFIC" 127.0.0.1 "$PORT" "$PKTSIZE" TCP 0 0 CLIENT
+echo "Starting LumaX UDP loopback transmitter toward 127.0.0.1:${PORT}"
+ns test_uwlumax_application.tcl 1 2 "$START" "$STOP" "$TRAFFIC" 127.0.0.1 "$PORT" "$PKTSIZE" UDP 0 0 CLIENT
 
 wait "$SERVER_PID"

@@ -14,13 +14,21 @@
 # If one PC can reach both modem IPs, the same two commands can be run from
 # two terminals on that PC.
 #
-# Local no-hardware loopback test:
+# Local no-hardware TCP loopback test:
 #
 #   Terminal 1:
 #     ns test_uwlumax_application.tcl 2 1 5 60 0 127.0.0.1 5555 16 TCP 0 0 SERVER
 #
 #   Terminal 2:
 #     ns test_uwlumax_application.tcl 1 2 5 60 5 127.0.0.1 5555 16 TCP 0 0 CLIENT
+#
+# Local no-hardware UDP loopback test:
+#
+#   Terminal 1:
+#     ns test_uwlumax_application.tcl 2 1 5 60 0 127.0.0.1 5555 16 UDP 0 0 SERVER
+#
+#   Terminal 2:
+#     ns test_uwlumax_application.tcl 1 2 5 60 5 127.0.0.1 5555 16 UDP 0 0 CLIENT
 
 set opt(node)        1
 set opt(dest)        2
@@ -51,7 +59,7 @@ proc printUsage {} {
     puts "  UDP|TCP        optional connector protocol, default UDP"
     puts "  bitrate_bps    optional TX-duration estimate, default 0/unknown"
     puts "  tx_overhead_s  optional fixed TX-duration overhead, default 0"
-    puts "  CLIENT|SERVER  optional socket role; SERVER is useful for TCP loopback tests"
+    puts "  CLIENT|SERVER  optional socket role; SERVER is useful for local loopback tests"
 }
 
 if {$argc < 8 || $argc > 12} {
@@ -89,12 +97,6 @@ if {$opt(conn_proto) != "UDP" && $opt(conn_proto) != "TCP"} {
 
 if {$opt(conn_role) != "CLIENT" && $opt(conn_role) != "SERVER"} {
     puts "Invalid connector role: $opt(conn_role)"
-    printUsage
-    exit
-}
-
-if {$opt(conn_role) == "SERVER" && $opt(conn_proto) != "TCP"} {
-    puts "SERVER role is only supported by this loopback sample with TCP"
     printUsage
     exit
 }
@@ -254,9 +256,10 @@ proc createNode {} {
         $modem_ setUDP
     } else {
         $modem_ setTCP
-        if {$opt(conn_role) == "SERVER"} {
-            $modem_ setServer
-        }
+    }
+
+    if {$opt(conn_role) == "SERVER"} {
+        $modem_ setServer
     }
 
     set packer_ [new UW/AL/Packer]
