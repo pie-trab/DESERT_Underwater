@@ -48,6 +48,8 @@ private:
 
 	virtual void completeTx(Packet *p, bool success);
 
+	virtual bool configure();
+
 	/** Pointer to Connector object that interfaces with the device */
 	std::unique_ptr<UwConnector> p_connector;
 	/** Pointer to Interpreter object to parse device syntax */

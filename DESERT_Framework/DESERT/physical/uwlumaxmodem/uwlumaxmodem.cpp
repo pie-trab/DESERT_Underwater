@@ -273,9 +273,6 @@ UwLumaXModem::receivingData()
 			std::min(MAX_READ_BYTES, static_cast<int>(DATA_BUFFER_LEN));
 
 	while (receiving.load()) {
-		// Transparent mode assumes one connector read maps to one modem
-		// payload. Add framing in UwInterpreterLumaX if the socket becomes a
-		// byte stream.
 		int r_bytes =
 				p_connector->readFromDevice(data_buffer.data(), read_size);
 
@@ -396,4 +393,14 @@ UwLumaXModem::endRx(Packet *p)
 {
 	printOnLog(LogLevel::INFO, "LUMAXMODEM", "endRx::CALL_SENDUP");
 	sendUp(p, 0.01);
+}
+
+bool UwLumaXModem::configure(){
+	
+	
+	
+	
+	
+	
+	return false;
 }
