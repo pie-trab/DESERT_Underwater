@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 # Run the client
 # structure
@@ -10,7 +10,9 @@
 #   1          3
 
 # Usage:
-#  
+#
+# ./run_client.sh MODEM_IP MODEM_PORT PROTOCOL
+#
 # ns test_uwlumax_application.tcl node_id dest_id start stop traffic_period modem_ip modem_port pkt_size ?UDP|TCP? ?bitrate_bps? ?tx_overhead_s? ?CLIENT|SERVER?"
 # 
 # Arguments:"
@@ -26,5 +28,14 @@
 #   bitrate_bps    optional TX-duration estimate, default 0/unknown"
 #   tx_overhead_s  optional fixed TX-duration overhead, default 0"
 #   CLIENT|SERVER  optional socket role; SERVER is useful for local loopback tests"
+
+if [ "$#" -lt 3 ]; then
+	echo "Usage: $0 MODEM_IP MODEM_PORT PROTOCOL" >&2
+	exit 1
+fi
+
+MODEM_IP="$1"
+MODEM_PORT="$2"
+PROTOCOL="$3"
 
 ns test_uwlumax_application.tcl 3 1 5 60 5 "$MODEM_IP" "$MODEM_PORT" 16 "$PROTOCOL" 0 0 CLIENT
