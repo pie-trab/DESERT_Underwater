@@ -10,25 +10,6 @@
 #
 #   PC/modem 2:
 #     ns test_uwlumax_application.tcl 2 1 5 120 0  192.168.1.102 5555 16 UDP
-#
-# If one PC can reach both modem IPs, the same two commands can be run from
-# two terminals on that PC.
-#
-# Local no-hardware TCP loopback test:
-#
-#   Terminal 1:
-#     ns test_uwlumax_application.tcl 2 1 5 60 0 127.0.0.1 5555 16 TCP 0 0 SERVER
-#
-#   Terminal 2:
-#     ns test_uwlumax_application.tcl 1 2 5 60 5 127.0.0.1 5555 16 TCP 0 0 CLIENT
-#
-# Local no-hardware UDP loopback test:
-#
-#   Terminal 1:
-#     ns test_uwlumax_application.tcl 2 1 5 60 0 127.0.0.1 5555 16 UDP 0 0 SERVER
-#
-#   Terminal 2:
-#     ns test_uwlumax_application.tcl 1 2 5 60 5 127.0.0.1 5555 16 UDP 0 0 CLIENT
 
 set opt(node)        1
 set opt(dest)        2
