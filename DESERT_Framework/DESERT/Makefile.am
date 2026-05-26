@@ -65,6 +65,7 @@ SUBDIRS = m4 \
     interference/uwinterferenceofdm \
     physical/uwahoi_phy \
     physical/uwahoimodem \
+    physical/uwlumaxmodem \
     physical/uwmodamodem \
     physical/uwem_phy \
     physical/uwem_antenna \
