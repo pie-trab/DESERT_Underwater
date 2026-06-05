@@ -51,7 +51,9 @@ private:
 
     /** Broadcast address for the packet sending */
     std::string broadcast_address;
-	/** Pointer to Connector object that interfaces with the device */
+	/** Pointer to Connector object that interfaces with the modem for configuration */
+	std::unique_ptr<UwConnector> p_modem;
+	/** Pointer to Connector object that interfaces with the device for transmission */
 	std::unique_ptr<UwConnector> p_connector;
 	/** Variable holding the current status of the modem */
 	ModemState status;

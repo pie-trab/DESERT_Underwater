@@ -37,6 +37,7 @@
 #ifndef MSOCKET_H
 #define MSOCKET_H
 
+#include <cerrno>
 #include <uwconnector.h>
 
 #include <arpa/inet.h>
@@ -132,6 +133,15 @@ public:
 		proto = Transport::UDP;
 		std::cout << "UDP set" << std::endl;
 	};
+
+	/**
+	* Mehtod that enables or disables multicast
+	 */
+	virtual void
+	setMulticast(bool enable){
+		isMulticast = enable;
+	}
+
 	/**
 	 * Method that sets SERVER role
 	 */
@@ -140,6 +150,12 @@ public:
 	{
 		isClient = false;
 	};
+
+	/**
+	 * Method that sets a custom multicast address
+	 * @param address custom multicast address
+	 */
+	virtual void setMulticastAddress(const std::string &address);
 
 private:
 	/**
@@ -156,9 +172,16 @@ private:
 	 */
 	bool isClient;
 
-	/**
-	 *
+	/*
+	 * Bool value that enables or disables multicast functionality
 	 */
+	bool isMulticast;
+
+	/**
+	 * multicast address, used only if isMulticast is true
+	 */
+	std::string multicastAddress;
+
 	struct sockaddr_in cl_addr;
 };
 

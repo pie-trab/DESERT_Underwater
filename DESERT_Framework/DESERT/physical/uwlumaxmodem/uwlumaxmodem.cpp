@@ -90,11 +90,25 @@ UwLumaXModem::start()
 		MAX_READ_BYTES = DATA_BUFFER_LEN;
 	}
 
-    // do basically i need to keep this connection, maybe rename this p_connector to p_modem  
-	// i also need to change the openconnection method in order to implement the multicast bhaviuour.
+    // so basically i need to keep this connection, maybe rename this p_connector to p_modem  
+	// i also need to change the openconnection method in order to implement the multicast behaviour.
 	// now this can be done in two ways, overloading the openconnection method or setting a flag outside of it
 	// and changing the behaviuour inside. I would opt for the first method  
-	if (!p_connector->openConnection(modem_address)) {
+	
+	// -----------
+	// now this connetion will be for the modem configuration, not for transmitting data
+	if (!p_modem->openConnection(modem_address)) {
+		std::cout << "ERROR: connection to modem failed to open: "
+				  << modem_address << std::endl;
+		printOnLog(
+				LogLevel::ERROR, "LUMAXMODEM", "start::MODEM_CONNECTION_OPEN_FAILED");
+		return;
+	}
+
+	printOnLog(LogLevel::DEBUG, "LUMAXMODEM", "start::MODEM_OPEN_CONNECTION");
+
+    // second connector or something similar to the broadcast interface that sends things out
+	if (!p_connector->openConnection(broadcast_address)) {
 		std::cout << "ERROR: connection to modem failed to open: "
 				  << modem_address << std::endl;
 		printOnLog(
@@ -103,11 +117,9 @@ UwLumaXModem::start()
 	}
 
 	printOnLog(LogLevel::DEBUG, "LUMAXMODEM", "start::OPEN_CONNECTION");
-
-    // and create a secondo connector or something similar to the broadcast interface that sends things out
-
+	
     /// ... code to actually do that (could be that uwsocket needs some modifications) ...
-
+	// WIP, modifing the socket class
     
     // this is file i guess i just need to modify the methods
 	receiving.store(true);

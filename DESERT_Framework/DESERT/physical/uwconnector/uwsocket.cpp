@@ -26,6 +26,9 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <arpa/inet.h>
+#include <iterator>
+#include <netinet/in.h>
 #include <uwsocket.h>
 
 #include <cerrno>
@@ -42,6 +45,8 @@ UwSocket::UwSocket()
 	, socketfd(-1)
 	, proto(Transport::TCP)
 	, isClient(true)
+	, isMulticast(false)
+	, multicastAddress("239.1.1.1")
 {
 	local_errno = 0;
 }
@@ -93,7 +98,7 @@ UwSocket::openConnection(const std::string &path)
 						  << std::endl;
 				return (false);
 			}
-
+			// set SO_REUSEADDR
 			if (setsockopt(sockfd,
 						SOL_SOCKET,
 						SO_REUSEADDR,
@@ -186,7 +191,7 @@ UwSocket::openConnection(const std::string &path)
 
 	} else { // proto == Transport::UDP
 
-		if (isClient) {
+		if (isClient) { // client UDP
 
 			if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 				local_errno = errno;
@@ -195,6 +200,7 @@ UwSocket::openConnection(const std::string &path)
 				return (false);
 			}
 
+			// set SO_REUSEADDR
 			if (setsockopt(sockfd,
 						SOL_SOCKET,
 						SO_REUSEADDR,
@@ -206,13 +212,47 @@ UwSocket::openConnection(const std::string &path)
 				return (false);
 			}
 
+			// enabling multicast configuration
+			// when multicast is enabled remeber to use the network interface ip
+			// and NOT the modem ip as the dest_addr will change its meaning
+			if (isMulticast) {
+				struct in_addr localInterface;
+				localInterface.s_addr = inet_addr(address.c_str());
+
+				if (setsockopt(sockfd,
+							IPPROTO_IP,
+							IP_MULTICAST_IF,
+							(char *) &localInterface,
+							sizeof(localInterface)) < 0) {
+					local_errno = errno;
+					std::cerr << "UWSOCKET::ERROR:: Failed to set "
+								 "IP_MULTICAST_IF" +
+									std::to_string(local_errno)
+							  << std::endl;
+					return false;
+				}
+
+				// set TTL (consider if remove this or not)
+				unsigned char ttl = 1;
+				setsockopt(sockfd,
+						IPPROTO_IP,
+						IP_MULTICAST_TTL,
+						(char *) &ttl,
+						sizeof(ttl));
+			}
+
 			struct sockaddr_in dest_addr;
 
 			// only port provided
 			std::memset(&dest_addr, 0, sizeof(dest_addr));
 			dest_addr.sin_family = AF_INET;
 			dest_addr.sin_port = htons(port);
-			dest_addr.sin_addr.s_addr = inet_addr(address.c_str());
+
+			if (isMulticast) {
+				dest_addr.sin_addr.s_addr = inet_addr(multicastAddress.c_str());
+			} else {
+				dest_addr.sin_addr.s_addr = inet_addr(address.c_str());
+			}
 
 			if (sockfd > 0) {
 				int s_bytes = sendto(sockfd,
@@ -228,7 +268,7 @@ UwSocket::openConnection(const std::string &path)
 
 			return (true);
 
-		} else {
+		} else { // UDP server
 
 			if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 				local_errno = errno;
@@ -237,6 +277,7 @@ UwSocket::openConnection(const std::string &path)
 				return (false);
 			}
 
+			// set SO_REUSE ADDR
 			if (setsockopt(sockfd,
 						SOL_SOCKET,
 						SO_REUSEADDR,
@@ -261,6 +302,24 @@ UwSocket::openConnection(const std::string &path)
 				std::cerr << "UWSOCKET::ERROR::" + std::to_string(local_errno)
 						  << std::endl;
 				return (false);
+			}
+
+			if (isMulticast) {
+				struct ip_mreq mreq;
+				mreq.imr_multiaddr.s_addr = inet_addr(multicastAddress.c_str());
+				mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+
+				if (setsockopt(sockfd,
+							IPPROTO_IP,
+							IP_ADD_MEMBERSHIP,
+							(char *) &mreq,
+							sizeof(mreq)) < 0) {
+					std::cerr << "UWSOCKET::ERROR:: Failed to join multicast "
+								 "group" +
+									std::to_string(local_errno)
+							  << std::endl;
+					return false;
+				}
 			}
 
 			socklen_t addrlen = sizeof(cl_addr);
@@ -361,4 +420,25 @@ UwSocket::readFromDevice(void *wpos, int maxlen)
 	}
 
 	return -1;
+}
+
+void
+UwSocket::setMulticastAddress(const std::string &address)
+{
+    if (!isMulticast) {
+        std::cerr << "UWSOCKET::ERROR::MULTICAST_NOT_ENABLED" << std::endl;
+        return;
+    }
+
+    if (proto != UwSocket::Transport::UDP) {
+        std::cerr << "Error: current protocol is not UDP, the address will be set but not used." << std::endl;
+    }
+
+    // FIX: Use a temporary struct to hold the binary result of the validation
+    struct in_addr tmp_addr;
+    if (inet_pton(AF_INET, address.c_str(), &tmp_addr) <= 0) {
+        std::cerr << "UWSOCKET::ERROR::INVALID_MULTICAST_ADDRESS" << std::endl;
+    } else {
+        multicastAddress = address; // Safe to assign the string now
+    }
 }
