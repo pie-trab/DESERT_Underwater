@@ -81,10 +81,16 @@ public:
 	virtual void setUDP() {};
 
 	/**
+	 * Method that should enable, for a socket connector, the multicast
+	 * functionality To be left untouched by other types of connectors.
+	 */
+	virtual void setMulticast() {};
+
+	/**
 	 * Method that opens up a connection to a device. This method can open
 	 * a conection with the modem's data/config interface
 	 * or directly to some remote host at the end of the connection.
-	 * @path string representing the path to connect to: its meaning depends
+	 * @param path string representing the path to connect to: its meaning depends
 	 *       on the type of connection established
 	 * @return boolean true if connection is correctly opened, false otherwise
 	 */

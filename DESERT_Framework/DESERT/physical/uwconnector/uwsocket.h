@@ -79,7 +79,7 @@ public:
 	 * Method that opens a TCP or UDP connection, accordinto to UwSocket::proto
 	 * variable: the behavior depends both on the transport protocol selected
 	 * and the path specified in the constructor parameter.
-	 * If TCP is set:
+	 * If TCP is // set:
 	 * - IP:PORT will try to connect to the provided IP and PORT
 	 * - PORT will try to connect to the provided port on localhost
 	 * if, otherwise, UDP is set:
@@ -135,11 +135,12 @@ public:
 	};
 
 	/**
-	* Mehtod that enables or disables multicast
+	* Mehtod that enables multicast
 	 */
 	virtual void
-	setMulticast(bool enable){
-		isMulticast = enable;
+	setMulticast(){
+		isMulticast = true;
+		std::cout << "Multicast enabled" << std::endl;
 	}
 
 	/**
@@ -150,12 +151,6 @@ public:
 	{
 		isClient = false;
 	};
-
-	/**
-	 * Method that sets a custom multicast address
-	 * @param address custom multicast address
-	 */
-	virtual void setMulticastAddress(const std::string &address);
 
 private:
 	/**
@@ -178,10 +173,8 @@ private:
 	bool isMulticast;
 
 	/**
-	 * multicast address, used only if isMulticast is true
+	 * Socket address
 	 */
-	std::string multicastAddress;
-
 	struct sockaddr_in cl_addr;
 };
 

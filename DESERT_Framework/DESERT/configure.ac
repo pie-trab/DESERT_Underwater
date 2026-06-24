@@ -88,6 +88,7 @@ DESERT_CPPFLAGS="$DESERT_CPPFLAGS "'-I$(top_srcdir)/interference/uwinterferenceo
 DESERT_CPPFLAGS="$DESERT_CPPFLAGS "'-I$(top_srcdir)/physical/uwahoi_phy'
 DESERT_CPPFLAGS="$DESERT_CPPFLAGS "'-I$(top_srcdir)/physical/uwahoimodem'
 DESERT_CPPFLAGS="$DESERT_CPPFLAGS "'-I$(top_srcdir)/physical/uwmodamodem'
+DESERT_CPPFLAGS="$DESERT_CPPFLAGS "'-I$(top_srcdir)/physical/uwmulticastmodem'
 DESERT_CPPFLAGS="$DESERT_CPPFLAGS "'-I$(top_srcdir)/physical/uwoptical_phy'
 DESERT_CPPFLAGS="$DESERT_CPPFLAGS "'-I$(top_srcdir)/physical/uwopticalbeampattern'
 DESERT_CPPFLAGS="$DESERT_CPPFLAGS "'-I$(top_srcdir)/physical/uwem_phy'
@@ -230,6 +231,7 @@ AC_CONFIG_FILES([
     physical/uwahoi_phy/Makefile
     physical/uwahoimodem/Makefile
     physical/uwmodamodem/Makefile
+    physical/uwmulticastmodem/Makefile
     physical/uwoptical_phy/Makefile
     physical/uwopticalbeampattern/Makefile
     physical/uwem_phy/Makefile

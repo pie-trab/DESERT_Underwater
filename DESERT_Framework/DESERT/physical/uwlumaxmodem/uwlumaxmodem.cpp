@@ -47,14 +47,15 @@ UwLumaXModem::UwLumaXModem()
 	, rx_thread()
 	, tx_thread()
 	, rx_payload("")
-	, bitrate_(0.0)
+	, broadcast_address("239.1.1.1")
+	, bitrate_(30000.0)
 	, tx_overhead_(0.0)
 {
-    // no idea what they do
+	// no idea what they do
 	DATA_BUFFER_LEN = 4096;
 	MAX_READ_BYTES = 4096;
 
-    // vague idea of what they do, from the name
+	// vague idea of what they do, from the name
 	bind("bitrate", (double *) &bitrate_);
 	bind("tx_overhead", (double *) &tx_overhead_);
 }
@@ -67,22 +68,26 @@ UwLumaXModem::~UwLumaXModem()
 void
 UwLumaXModem::start()
 {
-    // so basically, I need to do multicast connection here. Interesting. How tho?
+	// so basically, I need to do multicast connection here. Interesting. How
+	// tho?
 
-   if (broadcast_address == ""){
-        std::cout << "ERROR: broadcast address not set!" << std::endl;
-        printOnLog(LogLevel::ERROR, "LUMAXMODEM", "start::BROADCAST_ADDRESS_NOT_SET");
-        return;
-    }
+	if (broadcast_address == "") {
+		std::cout << "ERROR: broadcast address not set!" << std::endl;
+		printOnLog(LogLevel::ERROR,
+				"LUMAXMODEM",
+				"start::BROADCAST_ADDRESS_NOT_SET");
+		return;
+	}
 
-    // this could make sense to be optional, if the standard configuration is fine
+	// this could make sense to be optional, if the standard configuration is
+	// fine
 	if (modem_address == "") {
 		std::cout << "ERROR: Modem address not set!" << std::endl;
 		printOnLog(LogLevel::ERROR, "LUMAXMODEM", "start::ADDRESS_NOT_SET");
 		return;
 	}
 
-    // still no idea what they do
+	// still no idea what they do
 	if (DATA_BUFFER_LEN == 0) {
 		DATA_BUFFER_LEN = 4096;
 	}
@@ -90,24 +95,28 @@ UwLumaXModem::start()
 		MAX_READ_BYTES = DATA_BUFFER_LEN;
 	}
 
-    // so basically i need to keep this connection, maybe rename this p_connector to p_modem  
-	// i also need to change the openconnection method in order to implement the multicast behaviour.
-	// now this can be done in two ways, overloading the openconnection method or setting a flag outside of it
-	// and changing the behaviuour inside. I would opt for the first method  
-	
+	// so basically i need to keep this connection, maybe rename this
+	// p_connector to p_modem i also need to change the openconnection method in
+	// order to implement the multicast behaviour. now this can be done in two
+	// ways, overloading the openconnection method or setting a flag outside of
+	// it and changing the behaviuour inside. I would opt for the first method
+
 	// -----------
-	// now this connetion will be for the modem configuration, not for transmitting data
+	// now this connetion will be for the modem configuration, not for
+	// transmitting data
 	if (!p_modem->openConnection(modem_address)) {
 		std::cout << "ERROR: connection to modem failed to open: "
 				  << modem_address << std::endl;
-		printOnLog(
-				LogLevel::ERROR, "LUMAXMODEM", "start::MODEM_CONNECTION_OPEN_FAILED");
+		printOnLog(LogLevel::ERROR,
+				"LUMAXMODEM",
+				"start::MODEM_CONNECTION_OPEN_FAILED");
 		return;
 	}
 
 	printOnLog(LogLevel::DEBUG, "LUMAXMODEM", "start::MODEM_OPEN_CONNECTION");
 
-    // second connector or something similar to the broadcast interface that sends things out
+	// second connector or something similar to the broadcast interface that
+	// sends things out
 	if (!p_connector->openConnection(broadcast_address)) {
 		std::cout << "ERROR: connection to modem failed to open: "
 				  << modem_address << std::endl;
@@ -117,11 +126,12 @@ UwLumaXModem::start()
 	}
 
 	printOnLog(LogLevel::DEBUG, "LUMAXMODEM", "start::OPEN_CONNECTION");
-	
-    /// ... code to actually do that (could be that uwsocket needs some modifications) ...
+
+	/// ... code to actually do that (could be that uwsocket needs some
+	/// modifications) ...
 	// WIP, modifing the socket class
-    
-    // this is file i guess i just need to modify the methods
+
+	// this is file i guess i just need to modify the methods
 	receiving.store(true);
 	transmitting.store(true);
 
@@ -196,7 +206,25 @@ UwLumaXModem::command(int argc, const char *const *argv)
 			p_connector->setServer();
 			return TCL_OK;
 		}
+		if (!strcmp(argv[1], "setMulticast")) {
+			p_connector->setMulticast();
+			return TCL_OK;
+		}
 	} else if (argc == 3) {
+		if (!strcmp(argv[1], "setBroadcastAddress") ||
+				!strcmp(argv[1], "setMulticastAddress")) {
+			auto *socket = dynamic_cast<UwSocket *>(p_connector.get());
+			if (socket == nullptr) {
+				fprintf(stderr,
+						"Invalid connector type, multicast address requires SOCKET\n");
+				return TCL_ERROR;
+			}
+
+			broadcast_address = argv[2];
+			socket->setMulticast();
+			socket->setMulticastAddress(broadcast_address);
+			return TCL_OK;
+		}
 		if (!strcmp(argv[1], "setConnector")) {
 			if (!strcmp(argv[2], "SOCKET")) {
 				p_connector.reset(new UwSocket());
@@ -305,10 +333,9 @@ UwLumaXModem::receivingData()
 	const int read_size =
 			std::min(MAX_READ_BYTES, static_cast<int>(DATA_BUFFER_LEN));
 
-    // this is fine i need to change readFromDevice tho
 	while (receiving.load()) {
-		int r_bytes = 
-                p_connector->readFromDevice(data_buffer.data(), read_size);
+		int r_bytes = // readFromDevice method probably fine, the address should be set 
+				p_connector->readFromDevice(data_buffer.data(), read_size);
 
 		if (r_bytes <= 0) {
 			if (receiving.load()) {
@@ -326,21 +353,20 @@ UwLumaXModem::receivingData()
 		auto rsp_beg = beg_it;
 		auto rsp_end = beg_it;
 
-
-//		if (p_interpreter->parseResponse(
-//					rsp, end_it, rsp_beg, rsp_end, rx_payload)) {
-//			printOnLog(LogLevel::DEBUG,
-//					"LUMAXMODEM",
-//					"receivingData::RX_BYTES=" +
-//							std::to_string(rx_payload.size()));
-//
-//			Packet *p = Packet::alloc();
-//			createRxPacket(p);
-//			std::function<void(UwModem &, Packet * p)> callback =
-//					&UwModem::recv;
-//			ModemEvent e = {callback, p};
-//			event_q.push(e);
-//		}
+		//		if (p_interpreter->parseResponse(
+		//					rsp, end_it, rsp_beg, rsp_end, rx_payload)) {
+		//			printOnLog(LogLevel::DEBUG,
+		//					"LUMAXMODEM",
+		//					"receivingData::RX_BYTES=" +
+		//							std::to_string(rx_payload.size()));
+		//
+		//			Packet *p = Packet::alloc();
+		//			createRxPacket(p);
+		//			std::function<void(UwModem &, Packet * p)> callback =
+		//					&UwModem::recv;
+		//			ModemEvent e = {callback, p};
+		//			event_q.push(e);
+		//		}
 
 		std::fill(data_buffer.begin(), data_buffer.end(), '\0');
 	}
@@ -427,12 +453,9 @@ UwLumaXModem::endRx(Packet *p)
 	sendUp(p, 0.01);
 }
 
-bool UwLumaXModem::configure(){
-	
-	
-	
-	
-	
-	
+bool
+UwLumaXModem::configure()
+{
+
 	return false;
 }

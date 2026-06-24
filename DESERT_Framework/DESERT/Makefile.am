@@ -66,6 +66,7 @@ SUBDIRS = m4 \
     physical/uwahoi_phy \
     physical/uwahoimodem \
     physical/uwmodamodem \
+    physical/uwmulticastmodem \
     physical/uwem_phy \
     physical/uwem_antenna \
     physical/uwoptical_phy \
