@@ -25,7 +25,7 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# Author: Roberto Francescon
+# Author: Pietro Trabuio
 # Version: 1.0.0
 #
 set opt(bash_parameters) 1
@@ -45,8 +45,8 @@ set opt(start)    1
 set opt(stop)     100
 set opt(traffic)  60
 set opt(app_port)    22223
-set opt(ip)       "10.42.144.1"
-set opt(port)     9200
+set opt(ip)       "239.1.1.12" 
+set opt(port)     50112
 set opt(payload_size) 16
 set opt(rngstream)    1
 ##############################
@@ -155,10 +155,14 @@ set addrMAC $opt(node)
 set time_stop [expr "$opt(stop)+10"]
 
 #Trace file name
-set tf_name "/dev/null/"
+set tf_name "/dev/null"
+set opt(tracefilename) "/dev/null"
+set opt(cltracefilename) "/dev/null"
 
 #Open a file for writing the trace data
 set tf [open $tf_name w]
+set opt(tracefile) [open $opt(tracefilename) w]
+set opt(cltracefile) [open $opt(cltracefilename) w]
 $ns trace-all $tf
 
 #random generator
@@ -244,8 +248,8 @@ proc createNode { } {
 	global ns opt socket_port node_ address
 	global app_ transport_ port_ routing_ ipif_ mac_ modem_ ipif_ mll_ uwal_ app_sink
 
-	    # build the NS-Miracle node
-    set node_ [$ns create-M_Node]
+    # build the NS-Miracle node
+    set node_ [$ns create-M_Node $opt(tracefile) $opt(cltracefile)]
 
     # define the module(s) you want to put in the node
     # APPLICATION LAYER
@@ -275,14 +279,14 @@ proc createNode { } {
     puts "Creating node..."
 
     # insert the module(s) into the node
-    $node_ addmodule 8 $app_ 1 "UWA"
-    $node_ addmodule 7 $transport_ 1 "UDP"
-    $node_ addmodule 6 $routing_ 1 "IPR"
-    $node_ addmodule 5 $ipif_ 1 "IPIF"
-    $node_ addmodule 4 $mll_ 1 "ARP"  
-    $node_ addmodule 3 $mac_ 1 "ALOHA"
-    $node_ addmodule 2 $uwal_ 1 "UWAL"
-    $node_ addmodule 1 $modem_ 1 "MULTICAST" 
+    $node_ addModule 8 $app_ 1 "UWA"
+    $node_ addModule 7 $transport_ 1 "UDP"
+    $node_ addModule 6 $routing_ 1 "IPR"
+    $node_ addModule 5 $ipif_ 1 "IPIF"
+    $node_ addModule 4 $mll_ 1 "ARP"  
+    $node_ addModule 3 $mac_ 1 "ALOHA"
+    $node_ addModule 2 $uwal_ 1 "UWAL"
+    $node_ addModule 1 $modem_ 1 "MULTICAST" 
 
     $node_ setConnection $app_ $transport_ trace
     $node_ setConnection $transport_ $routing_ trace
@@ -308,15 +312,11 @@ proc createNode { } {
     $ipif_ addr $opt(node)
     $mac_ setMacAddr $opt(node)
     $modem_ set ID_ $opt(node)
-    $modem_ setModemAddress $address
+    $modem_ setDataAddress $address
+    # $modem_ setModemAddress $modem_address     # different to data address, not needed if modem control is not needed
     $modem_ set bitrate $opt(bitrate)
     $modem_ set tx_overhead $opt(tx_overhead)
     $modem_ setLogLevel DBG
-    $modem_ setMulticast
-    $modem_ setUDP
-    if {$opt(traffic) == 0} {
-      $modem_ setServer
-    }
 
     # set packer for Adaptation Layer
     set packer_ [new UW/AL/Packer]
@@ -383,7 +383,7 @@ $ns at $time_stop "$modem_ stop"
 # Define here the procedure to call at the end of the simulation
 proc finish {} {
    
-   global ns tf tf_name	
+   global ns tf tf_name opt	
    # computation of the statics
 
    # display messages
@@ -395,6 +395,8 @@ proc finish {} {
    
    # close files
    close $tf
+   close $opt(tracefile)
+   close $opt(cltracefile)
 }
 
 ##################

@@ -53,6 +53,6 @@ CLEANFILES = initTcl.cc
 TCL_FILES = uwmulticastmodem-init.tcl
 
 initTcl.cc: Makefile $(TCL_FILES)
-		cat $(VPATH)/$(TCL_FILES) | @TCL2CPP@ UwmulticastModemTclCode > initTcl.cc
+		cat $(VPATH)/$(TCL_FILES) | @TCL2CPP@ UwMulticastModemTclCode > initTcl.cc
 
 EXTRA_DIST = $(TCL_FILES)

@@ -3,18 +3,22 @@
 #include "uwconnector.h"
 #include "uwmodem.h"
 #include "uwsocket.h"
+#include <arpa/inet.h>
 #include <cstring>
 #include <functional>
 #include <mphy_pktheader.h>
 #include <mutex>
+#include <netinet/in.h>
 #include <packet.h>
 #include <string>
-#include <sys/stat.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#include <sys/stat.h>
 #include <thread>
 #include <uwmulticastmodem.h>
+
+
+const std::chrono::milliseconds UwMulticastModem::MODEM_TIMEOUT =
+		std::chrono::milliseconds(3000);
 
 /**
  * Class to create the Otcl shadow object for an object of the class
@@ -41,9 +45,10 @@ UwMulticastModem::UwMulticastModem()
 	: UwModem()
 	// TODO add modem_connector initialization
 	, data_connector(new UwSocket())
-	, data_in_addr(inet_addr("241.1.1.12"))
-	, data_in_port(htons(55100))
+	, data_address()
+	, status(ModemState::AVAILABLE)
 	, tx_queue_m()
+	, status_cv()
 	, tx_queue_cv()
 	, receiving(false)
 	, transmitting(false)
@@ -57,8 +62,17 @@ UwMulticastModem::UwMulticastModem()
 	DATA_BUFFER_LEN = 4096;
 	MAX_READ_BYTES = 4096;
 
+	data_connector->setMulticast();
+	data_connector->setUDP();
+
+
 	bind("bitrate", (double *) &bitrate_);
 	bind("tx_overhead", (double *) &tx_overhead_);
+}
+
+UwMulticastModem::~UwMulticastModem()
+{
+	stop();
 }
 
 void
@@ -108,8 +122,9 @@ int
 UwMulticastModem::command(int argc, const char *const *argv)
 {
 	if (argc == 3) {
-		if (!strcmp(argv[1], "setModemConnection")) {
-			// TODO enable modem connection for configuration
+		if (!strcmp(argv[1], "setDataAddress")) {
+			data_address = argv[2];
+			return TCL_OK;
 		}
 		// TODO REMOVE this was the old, wrong, logic for multicast address
 		// if (!strcmp(argv[1], "setMulticastAddress")) {
@@ -124,15 +139,15 @@ UwMulticastModem::command(int argc, const char *const *argv)
 		// 	socket->setMulticast();
 		// 	return TCL_OK;
 		// }
-		// TODO probably remove, this seems wrong
-		if (!strcmp(argv[1], "setConnector")) {
-			if (!strcmp(argv[2], "SOCKET")) {
-				data_connector.reset(new UwSocket());
-				return TCL_OK;
-			}
-			fprintf(stderr, "Invalid connector type, only SOCKET is supported");
-			return TCL_ERROR;
-		}
+		// TODO check if needs removing, the socket is already initialized
+		// if (!strcmp(argv[1], "setConnector")) {
+		// 	if (!strcmp(argv[2], "SOCKET")) {
+		// 		data_connector.reset(new UwSocket());
+		// 		return TCL_OK;
+		// 	}
+		// 	fprintf(stderr, "Invalid connector type, only SOCKET is supported");
+		// 	return TCL_ERROR;
+		// }
 	}
 
 	return UwModem::command(argc, argv);
@@ -142,6 +157,18 @@ int
 UwMulticastModem::getModulationType(Packet *p)
 {
 	return 0;
+}
+
+double
+UwMulticastModem::getTxDuration(Packet *p)
+{
+	if (bitrate_ <= 0) {
+		return -1.0;
+	}
+
+	hdr_uwal *uwalh = HDR_UWAL(p);
+	return tx_overhead_ +
+			(8.0 * static_cast<double>(uwalh->binPktLength())) / bitrate_;
 }
 
 int
@@ -182,11 +209,13 @@ UwMulticastModem::start()
 	// TODO, open connection to control modem parameters
 	// if (!signal_conn->openConnection(signal_address)){
 	// }
-
+	// TODO the address in this case must be only port or inet_addr with port in
+	// the format XXX.XXX.XXX.XXX:PORT, if it is only inet_addr without port
+	// this will break. Pretty sure need to check
 	if (!data_connector->openConnection(data_address)) {
 		std::string err_msg =
 				"FAILED_TO_OPEN_CONNECTION_AT_BROADCAST_ADDRESS_AND_PORT:" +
-				data_address + ":" + std::to_string(data_in_port);
+				data_address;
 	}
 
 	receiving.store(true);
@@ -349,6 +378,45 @@ UwMulticastModem::startTx(Packet *p)
 		event_q.push(e);
 
 		printOnLog(
-				LogLevel::INFO, "MULTICASTMODEM", "startTx::PAKCET_TRASMITTED");
+				LogLevel::INFO, "MULTICASTMODEM", "startTx::PAKCET_TRANSMITTED");
 	}
+}
+
+void
+UwMulticastModem::completeTx(Packet *p, bool success)
+{
+	if (!success) {
+		HDR_CMN(p)->error_ = 1;
+	}
+
+	{
+		std::lock_guard<std::mutex> state_lock(status_m);
+		status = ModemState::AVAILABLE;
+	}
+	status_cv.notify_all();
+
+	std::function<void(UwModem &, Packet * p)> callback = &UwModem::realTxEnded;
+	ModemEvent e = {callback, p};
+	event_q.push(e);
+}
+
+void
+UwMulticastModem::startRx(Packet *p)
+{
+	printOnLog(
+			LogLevel::INFO, "MULTICASTMODEM", "startRx::CALL_PHY2MACSTARTRX");
+	Phy2MacStartRx(p);
+}
+
+void
+UwMulticastModem::endRx(Packet *p)
+{
+	printOnLog(LogLevel::INFO, "MULTICASTMODEM", "endRx::CALL_SENDUP");
+	sendUp(p, 0.01);
+}
+
+bool
+UwMulticastModem::configure()
+{
+	return false;
 }

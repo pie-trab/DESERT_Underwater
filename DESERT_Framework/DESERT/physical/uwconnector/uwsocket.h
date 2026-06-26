@@ -176,6 +176,9 @@ private:
 	 * Socket address
 	 */
 	struct sockaddr_in cl_addr;
+
+	/** Multicast address */
+	std::string multicast_address;
 };
 
 #endif

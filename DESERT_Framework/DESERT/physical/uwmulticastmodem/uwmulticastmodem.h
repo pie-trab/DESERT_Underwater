@@ -97,7 +97,7 @@ private:
 
 	virtual bool configure();
 
-	/** Address for data connection */
+	/** Address for data connection, in format XXX.XXX.XXX.XXX:PORT */
 	std::string data_address;
 
 	// TODO this specific behaviour is relative to the LUMAX modem, see if this
