@@ -3,7 +3,10 @@
 #include "uwconnector.h"
 #include "uwmodem.h"
 #include "uwsocket.h"
+#include "uwmulticastmodem.h"
+
 #include <arpa/inet.h>
+#include <thread>
 #include <cstring>
 #include <functional>
 #include <mphy_pktheader.h>
@@ -13,8 +16,6 @@
 #include <string>
 #include <sys/socket.h>
 #include <sys/stat.h>
-#include <thread>
-#include <uwmulticastmodem.h>
 
 
 const std::chrono::milliseconds UwMulticastModem::MODEM_TIMEOUT =

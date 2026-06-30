@@ -317,12 +317,12 @@ UwSocket::openConnection(const std::string &path)
 			// 4. Join the multicast group on the specific interface
 			if (isMulticast) {
 				struct ip_mreq group;
-				group.imr_multiaddr.s_addr = inet_addr(
-						multicast_address.c_str()); // multicast group that the
-													// device will send message
-				group.imr_interface.s_addr =
-						inet_addr(address.c_str()); // device interface where
-													// the message will be sent
+				group.imr_multiaddr.s_addr = inet_addr(multicast_address
+								.c_str()); // multicast group that the
+										   // device recieve send message
+				group.imr_interface.s_addr = inet_addr(
+						address.c_str()); // device interface that will be
+										  // listening for that multicast group
 
 				if (setsockopt(sockfd,
 							IPPROTO_IP,

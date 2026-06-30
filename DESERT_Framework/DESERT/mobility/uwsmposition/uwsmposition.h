@@ -52,7 +52,7 @@
 
 
 #define sgn(x) (((x) == 0.0) ? 0.0 : ((x) / fabs(x)))
-#define pi (4 * atan(1.0))
+#define pi_local (4 * atan(1.0))
 
 class UWSMPosition : public Position
 {
