@@ -26,13 +26,17 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <arpa/inet.h>
+#include <cstddef>
+#include <netinet/in.h>
+#include <ostream>
+#include <string>
 #include <uwsocket.h>
 
 #include <cerrno>
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <unistd.h>
@@ -42,12 +46,14 @@ UwSocket::UwSocket()
 	, socketfd(-1)
 	, proto(Transport::TCP)
 	, isClient(true)
+	, isMulticast(false)
 {
 	local_errno = 0;
 }
 
 UwSocket::~UwSocket()
 {
+	close(socketfd);
 }
 
 const bool
@@ -186,7 +192,7 @@ UwSocket::openConnection(const std::string &path)
 
 	} else { // proto == Transport::UDP
 
-		if (isClient) {
+		if (isClient) { // sender UDP
 
 			if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 				local_errno = errno;
@@ -208,6 +214,35 @@ UwSocket::openConnection(const std::string &path)
 
 			struct sockaddr_in dest_addr;
 
+			// adding multicast configuration to dest_addr
+			if (isMulticast) {
+
+				if (setsockopt(sockfd,
+							IPPROTO_IP,
+							IP_MULTICAST_IF,
+							(char *) &dest_addr,
+							sizeof(dest_addr)) < 0) {
+					local_errno = errno;
+					std::cerr << "UWSOCKET::ERROR:: Failed to set " +
+									std::to_string(local_errno)
+							  << std::endl;
+					return false;
+				}
+
+				unsigned char ttl = 1;
+				if (setsockopt(sockfd,
+							IPPROTO_IP,
+							IP_MULTICAST_TTL,
+							(char *) &ttl,
+							sizeof(ttl)) < 0) {
+					local_errno = errno;
+					std::cerr << "UWSOCKET::ERROR:: Failed to set TTL" +
+									std::to_string(local_errno)
+							  << std::endl;
+					return false;
+				}
+			}
+
 			// only port provided
 			std::memset(&dest_addr, 0, sizeof(dest_addr));
 			dest_addr.sin_family = AF_INET;
@@ -228,7 +263,7 @@ UwSocket::openConnection(const std::string &path)
 
 			return (true);
 
-		} else {
+		} else { // receiver UDP
 
 			if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 				local_errno = errno;
@@ -261,6 +296,25 @@ UwSocket::openConnection(const std::string &path)
 				std::cerr << "UWSOCKET::ERROR::" + std::to_string(local_errno)
 						  << std::endl;
 				return (false);
+			}
+
+			struct ip_mreq group;
+			if (isMulticast) {
+				inet_pton(AF_INET,
+						multicast_address.c_str(),
+						&group.imr_multiaddr);
+				inet_pton(AF_INET, address.c_str(), &group.imr_interface);
+
+				if (setsockopt(sockfd,
+							IPPROTO_IP,
+							IP_ADD_MEMBERSHIP,
+							(char *) &group,
+							sizeof(group)) < 0) {
+					local_errno = errno;
+					std::cerr
+							<< "UWSOCKET::ERROR::Adding multicast group failed "
+							<< std::endl;
+				}
 			}
 
 			socklen_t addrlen = sizeof(cl_addr);
