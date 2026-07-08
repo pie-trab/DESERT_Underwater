@@ -27,9 +27,12 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "phymac-clmsg.h"
+#include "uwmodem.h"
 
 #include <fcntl.h>
 #include <memory>
+#include <mutex>
+#include <sys/socket.h>
 #include <uwlumaxuvmodem.h>
 #include <uwsocket.h>
 
@@ -40,10 +43,6 @@
 const int UwLumaXUVModem::SIGNALING_ADDRESS = 55006;
 
 const int UwLumaXUVModem::DATA_ADDRESS = 55555;
-
-const std::string sep = {"::"};
-
-const std::string end_delim = {";"};
 
 const std::chrono::milliseconds UwLumaXUVModem::MODEM_TIMEOUT =
 		std::chrono::milliseconds(3000);
@@ -124,6 +123,7 @@ UwLumaXUVModem::recv(Packet *p)
 
 		ph->worth_tracing = false;
 
+		// TODO
 		ph->srcSpectralMask = getTxSpectralMask(p);
 		ph->srcAntenna = getTxAntenna(p);
 		ph->srcPosition = getPosition();
@@ -147,15 +147,27 @@ int
 UwLumaXUVModem::command(int argc, const char *const *argv)
 {
 	// Tcl &tcl = Tcl::instance();
-
+	if (argc == 2) {
+		if (!strcmp(argv[1], "setServer")) {
+			data_conn->setServer();
+			return TCL_OK;
+		}
+	}
 	if (argc == 3) {
-		if (!strcmp(argv[1], "setModemAddress")) {
+		if (!strcmp(argv[1], "setModemAddress")) { // TODO
 			modem_address = argv[2];
 			return TCL_OK;
 		}
+		// local network address that the modem will send multicast messages to
 		if (!strcmp(argv[1], "setLocalAddress")) {
 			data_address = argv[2];
 			return TCL_OK;
+		}
+		if (!strcmp(argv[1], "setMulticastAddress")) {
+			if (static_cast<UwSocket *>(data_conn.get())
+							->setMulticastAddress(argv[2])) {
+				return TCL_OK;
+			}
 		}
 	}
 	return UwModem::command(argc, argv);
@@ -233,9 +245,15 @@ UwLumaXUVModem::start()
 
 	if (!data_conn->openConnection(data_address)) {
 		std::string err_msg =
-				"DATA_CHANNEL_FAILED_TO_OPEN_AT_PORT:" + data_address;
+				"DATA_CHANNEL_FAILED_TO_OPEN_WITH_ADDRESS:" + data_address;
 		printOnLog(LogLevel::ERROR, "LUMAXUVMODEM", err_msg);
+		err_msg = "address should have no port";
+		printOnLog(LogLevel::DEBUG, "LUMAXUVMODEM", err_msg);
 		return;
+	} else {
+		printOnLog(LogLevel::INFO,
+				"LUMAXUVMODEM",
+				"DATA_CONNECTION_ESTABLISHED:" + data_address);
 	}
 
 	// set flags to true so loops can start
@@ -278,57 +296,57 @@ UwLumaXUVModem::stop()
 	if (rx_thread.joinable())
 		rx_thread.join();
 
-	checkTimer->force_cancel();
+	if (checkTimer) {
+		checkTimer->force_cancel();
+	}
 }
 
 void
 UwLumaXUVModem::receivingData()
 {
-	data_buffer.reserve(DATA_BUFFER_LEN);
+	data_buffer.resize(DATA_BUFFER_LEN, '\0');
 	std::fill(data_buffer.begin(), data_buffer.end(), '\0');
 
+	printOnLog(UwModem::LogLevel::DEBUG, "LUMAXUV", "Reached reading loop ");
 	while (receiving.load()) {
-		std::unique_lock<std::mutex> state_lock(status_m);
-		if (status_cv.wait_for(state_lock, MODEM_TIMEOUT, [&] {
-				return status == ModemState::RECEIVING;
-			})) {
+		// std::unique_lock<std::mutex> state_lock(status_m);
+		// if (status_cv.wait_for(state_lock, MODEM_TIMEOUT, [&] {
+		// 		return status == ModemState::RECEIVING;
+		// 	})) {
 
+		auto beg_it = data_buffer.begin();
+		int r_bytes = data_conn->readFromDevice(&(*beg_it), MAX_READ_BYTES);
+
+		if (r_bytes > 0) {
+			std::unique_lock<std::mutex> state_lock(status_m);
+			status = ModemState::RECEIVING;
 			state_lock.unlock();
 
-			auto beg_it = data_buffer.begin();
-			int r_bytes = data_conn->readFromDevice(&(*beg_it), MAX_READ_BYTES);
+			printOnLog(UwModem::LogLevel::DEBUG,
+					"LUMAXUV",
+					"read " + std::to_string(r_bytes) + " bytes");
 
-			if (r_bytes > 0) {
-				// TODO in this condition, who assures me that the read bytes
-				// will be always >= to the message size? I mean if the read
-				// message is smaller that the max size it will loop forever? in
-				// the code i took this from message_size was set in a specific
-				// method, but is not updated here so the problem could still
-				// present itself
-				while (r_bytes < rx_size) {
-					r_bytes += data_conn->readFromDevice(
-							&(*beg_it) + r_bytes, MAX_READ_BYTES - r_bytes);
-				}
+			rx_payload = std::string(beg_it, beg_it + r_bytes);
+			printOnLog(LogLevel::DEBUG,
+					"LUMAXUVMODEM",
+					"receivingData::LEN::" + std::to_string(rx_payload.size()) +
+							"::DATA::" + rx_payload);
 
-				rx_payload = std::string(beg_it, beg_it + r_bytes);
-				printOnLog(LogLevel::DEBUG,
-						"LUMAXUVMODEM",
-						"receivingData::LEN::" +
-								std::to_string(rx_payload.size()) +
-								"::DATA::" + rx_payload);
-
-				Packet *p = Packet::alloc();
-				createRxPacket(p);
-				std::function<void(UwModem &, Packet * p)> callback =
-						&UwModem::recv;
-				ModemEvent e = {callback, p};
-				event_q.push(e);
-
-				data_buffer.clear();
-			}
+			Packet *p = Packet::alloc();
+			createRxPacket(p);
+			std::function<void(UwModem &, Packet * p)> callback =
+					&UwModem::recv;
+			ModemEvent e = {callback, p};
+			event_q.push(e);
 
 			state_lock.lock();
 			status = ModemState::AVAILABLE;
+			status_cv.notify_all();
+
+		} else {
+			printOnLog(UwModem::LogLevel::DEBUG,
+					"LUMAXUV",
+					"failed if to read from device");
 		}
 	}
 }
@@ -346,10 +364,11 @@ UwLumaXUVModem::createRxPacket(Packet *p)
 void
 UwLumaXUVModem::transmittingData()
 {
+	printOnLog(
+			UwModem::LogLevel::DEBUG, "LUMAXUVMODEM", "STARTING_TRANSMISSION");
+
 	while (transmitting.load()) {
-
 		std::unique_lock<std::mutex> tx_lock(tx_queue_m);
-
 		tx_queue_cv.wait(
 				tx_lock, [&] { return !tx_queue.empty() || !transmitting; });
 
@@ -360,6 +379,7 @@ UwLumaXUVModem::transmittingData()
 		tx_queue.pop();
 		tx_lock.unlock();
 		if (pck) {
+			std::cout << "pacchetto inviato" << std::endl;
 			startTx(pck);
 		}
 
@@ -388,6 +408,10 @@ UwLumaXUVModem::startTx(Packet *p)
 			printOnLog(LogLevel::ERROR,
 					"LUMAXUVMODEM",
 					"startTx::FAIL_TO_WRITE_DATA_TO_DEVICE");
+
+			state_lock.lock();
+			status = ModemState::AVAILABLE;
+			status_cv.notify_all();
 			return;
 		}
 
@@ -398,6 +422,10 @@ UwLumaXUVModem::startTx(Packet *p)
 
 		printOnLog(
 				LogLevel::INFO, "LUMAXUVMODEM", "startTx::PACKET_TRANSMITTED");
+
+		state_lock.lock();
+		status = ModemState::AVAILABLE;
+		status_cv.notify_all();
 	}
 }
 

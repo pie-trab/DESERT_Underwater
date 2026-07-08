@@ -26,10 +26,3 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Module/UW/UwModem/LumaXUV set TxPower_      0.0
-Module/UW/UwModem/LumaXUV set NoiseSPD_     0.0
-Module/UW/UwModem/LumaXUV set period_       0.0
-Module/UW/UwModem/LumaXUV set buffer_size   4096
-Module/UW/UwModem/LumaXUV set max_read_size 1024
-Module/UW/UwModem/LumaXUV set ID_           0
-Module/UW/UwModem/LumaXUV set premodulation 0

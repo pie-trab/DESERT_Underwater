@@ -27,10 +27,10 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
- * @file uwmodamodem.h
- * @author Roberto Francescon
+ * @file uwlumaxuvmodem.h
+ * @author Pietro Trabuio
  * @version 0.0.1
- * @brief Driver for the MODA SDM acoustic UW modem
+ * @brief Driver for the LumaX-UV, UW modem
  */
 
 #ifndef UWMODAMODEM_H
