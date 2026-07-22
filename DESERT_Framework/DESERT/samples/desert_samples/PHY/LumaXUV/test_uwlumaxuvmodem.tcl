@@ -286,7 +286,6 @@ proc createNode { } {
     $modem_ set ID_ $opt(node)
     $modem_ setLocalAddress $address
     $modem_ setModemAddress $opt(config_address)
-    $modem_ setServer
     $modem_ setLogLevel DBG             ; #  ERR, INFO, DBG
 
     # set packer for Adaptation Layer
