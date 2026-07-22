@@ -206,10 +206,17 @@ private:
 	static const int SIGNALING_ADDRESS; /**< Port of the signaling channel */
 
 	/**
-	 * Data connector: used ot retrieve data coming from the modem data socket
+	 * socket used to send data
 	 */
-	std::unique_ptr<UwConnector> data_conn;
-	static const int DATA_ADDRESS; /**< Port of the data channel */
+	std::unique_ptr<UwSocket> send_conn;
+
+	/**
+	 * socket used to receive data
+	 */
+	std::unique_ptr<UwSocket> recv_conn;
+
+	
+	// static const int DATA_ADDRESS; /**< Port of the data channel */
 
 	/** Bytes buffer for the signaling channel (unparsed data) */
 	std::vector<char> signal_buffer;
