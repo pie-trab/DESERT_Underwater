@@ -326,6 +326,8 @@ uwApplicationModule::recv(Packet *p)
 
 	incrPktRecv();
 
+	std::cout << "[DEBUG_UWAPPLICATION] " << "value of withoutSocket(): " << withoutSocket() << std::endl; 
+	
 	if (!withoutSocket())
 		printOnLog(Logger::LogLevel::DEBUG,
 				"UWAPPLICATION",
