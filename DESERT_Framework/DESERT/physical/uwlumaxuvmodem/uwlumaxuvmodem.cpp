@@ -94,7 +94,7 @@ UwLumaXUVModem::UwLumaXUVModem()
 
 	recv_conn->setUDP();
 	recv_conn->setMulticast();
-	// this set the socket in reception mode (server receives data)
+	// this set recv_conn in reception mode (server receives data)
 	recv_conn->setServer();
 
 	data_buffer.clear();
@@ -153,19 +153,13 @@ UwLumaXUVModem::recv(Packet *p)
 int
 UwLumaXUVModem::command(int argc, const char *const *argv)
 {
-	// Tcl &tcl = Tcl::instance();
-	// if (argc == 2) {
-	// 	if (!strcmp(argv[1], "setServer")) {
-	// 		send_conn->setServer();
-	// 		return TCL_OK;
-	// 	}
-	// }
 	if (argc == 3) {
 		if (!strcmp(argv[1], "setModemAddress")) { // TODO
 			modem_address = argv[2];
 			return TCL_OK;
 		}
-		// local network address that the modem will send multicast messages to
+		// local network interface address that the modem will send multicast
+		// messages to
 		if (!strcmp(argv[1], "setLocalAddress")) {
 			data_address = argv[2];
 			return TCL_OK;
@@ -280,8 +274,6 @@ UwLumaXUVModem::start()
 	transmitting.store(true);
 
 	// Dispatch threads
-	// no signaling in this implementation
-	// sig_thread = std::thread(&UwLumaXUVModem::receivingSignaling, this);
 	rx_thread = std::thread(&UwLumaXUVModem::receivingData, this);
 	tx_thread = std::thread(&UwLumaXUVModem::transmittingData, this);
 
@@ -314,7 +306,7 @@ UwLumaXUVModem::stop()
 		printOnLog(LogLevel::ERROR,
 				"LUMAXUVMODEM",
 				"RECEIVE_CONNECTION_UNABLE_TO_CLOSE");
-	
+
 	if (sig_thread.joinable())
 		sig_thread.join();
 	if (rx_thread.joinable())

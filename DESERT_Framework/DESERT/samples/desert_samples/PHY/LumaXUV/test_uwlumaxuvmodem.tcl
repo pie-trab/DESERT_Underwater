@@ -184,9 +184,9 @@ NS2/MAC/Packer set TXtime_Bits 0
 NS2/MAC/Packer set SStime_Bits 0
 NS2/MAC/Packer set Padding_Bits 0
 NS2/MAC/Packer set debug_ 0
-
-UW/UDP/Packer set SPort_Bits 2              ; # porte interne a desert
-UW/UDP/Packer set DPort_Bits 2
+# changed the sport and dport from 2 to 8, change if errors
+UW/UDP/Packer set SPort_Bits 8              ; # porte interne a desert
+UW/UDP/Packer set DPort_Bits 8
 UW/UDP/Packer set debug_ 0
 
 UW/APP/uwApplication/Packer set SN_FIELD_ 8                 ; # 0 sequence number, nel caso lo gestica più di 8
@@ -210,6 +210,8 @@ Module/UW/APPLICATION set sea_trial_ 1                  ; # se attivo stampa tem
 Module/UW/UwModem/LumaXUV set debug_	 1
 Module/UW/UwModem/LumaXUV set buffer_size   2048
 Module/UW/UwModem/LumaXUV set max_read_size 2048
+
+Module/UW/UDP set debug_ 1
 
 ################################
 # Procedure(s) to create nodes #
@@ -281,6 +283,8 @@ proc createNode { } {
 
     # assign a port number to the application considered (CBR or VBR)
     set port_ [$transport_ assignPort $app_]
+    $app_ set destPort_ $port_
+
     $ipif_ addr $opt(node)
     $mac_ setMacAddr $opt(node)
     $modem_ set ID_ $opt(node)
@@ -331,12 +335,12 @@ createNode
 # $app_ set destAddr_ [expr $opt(dest)]       ; # destAddr_ ID destinatario
 # $app_ set destPort_ 1                       ; # 1 applicativo porta 1, porta interna packet destination port 2 bit di default
 
-$app_ set destAddr_ -1                       ; # broadcast address (-1)
+$app_ set destAddr_ 255                       ; # broadcast address (255)
 
 # $routing_ addRoute $opt(dest) $opt(dest)    ; # utile per multihop, nexthop->destinatario // multihop altro script
 # $mll_ addentry  $opt(dest) $opt(dest)
-$routing_ addRoute -1 -1                    ; # Route destination -1 to next-hop -1
-$mll_ addentry -1 -1                        ; # Map IP -1 to MAC -1
+$routing_ addRoute 255 255                    ; # Route destination 255 to next-hop 255
+$mll_ addentry 255 255                        ; # Map IP 255 to MAC 255
 
 
 #####################
