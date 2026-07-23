@@ -48,6 +48,7 @@
 #include <thread>
 #include <vector>
 
+
 class UwLumaXUVModem : public UwModem
 {
 
@@ -248,5 +249,26 @@ private:
 
 	int premodulation; /**< True if premodulation is on, false otherwise */
 };
+
+/**
+ * Class to create the Otcl shadow object for an object of the class
+ * UwLumaXUVModem.
+ */
+static class UwLumaXUVModem_TclClass : public TclClass
+{
+
+public:
+	UwLumaXUVModem_TclClass()
+		: TclClass("Module/UW/UwModem/LumaXUV")
+	{
+	}
+
+	TclObject *
+	create(int args, const char *const *argv)
+	{
+		return (new UwLumaXUVModem());
+	}
+
+} class_lumaxuvmodem;
 
 #endif

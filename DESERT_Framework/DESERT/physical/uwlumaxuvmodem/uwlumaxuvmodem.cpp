@@ -40,33 +40,8 @@
 #include <functional>
 #include <string>
 
-// const int UwLumaXUVModem::SIGNALING_ADDRESS = 55006;
-
-// const int UwLumaXUVModem::DATA_ADDRESS = 55555;
-
 const std::chrono::milliseconds UwLumaXUVModem::MODEM_TIMEOUT =
 		std::chrono::milliseconds(3000);
-
-/**
- * Class to create the Otcl shadow object for an object of the class
- * UwLumaXUVModem.
- */
-static class UwLumaXUVModem_TclClass : public TclClass
-{
-
-public:
-	UwLumaXUVModem_TclClass()
-		: TclClass("Module/UW/UwModem/LumaXUV")
-	{
-	}
-
-	TclObject *
-	create(int args, const char *const *argv)
-	{
-		return (new UwLumaXUVModem());
-	}
-
-} class_lumaxuvmodem;
 
 UwLumaXUVModem::UwLumaXUVModem()
 	: UwModem()
