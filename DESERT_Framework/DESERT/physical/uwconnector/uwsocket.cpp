@@ -308,23 +308,25 @@ UwSocket::openConnection(const std::string &path)
 						&dest_addr.sin_addr);
 			}
 
-			std::cerr << "[DEBUG] " << "sending init string" << std::endl;
+			// std::cerr << "[DEBUG] " << "sending init string" << std::endl;
 
-			int s_bytes = 0;
-			if ((s_bytes = sendto(sockfd,
-						 &udp_init_string,
-						 sizeof(udp_init_string),
-						 0,
-						 (const struct sockaddr *) &dest_addr,
-						 sizeof(dest_addr))) < 0) {
+			// int s_bytes = 0;
+			// if ((s_bytes = sendto(sockfd,
+			// 			 &udp_init_string,
+			// 			 sizeof(udp_init_string),
+			// 			 0,
+			// 			 (const struct sockaddr *) &dest_addr,
+			// 			 sizeof(dest_addr))) < 0) {
 
-				local_errno = errno;
-				std::cerr << "UWSOCKET::ERROR::UDP sendto() of init string "
-							 "failed. Error code: " +
-								std::to_string(local_errno)
-						  << std::endl;
-				return false;
-			}
+			// 	local_errno = errno;
+			// 	std::cerr << "UWSOCKET::ERROR::UDP sendto() of init string "
+			// 				 "failed. Error code: " +
+			// 					std::to_string(local_errno)
+			// 			  << std::endl;
+			// 	return false;
+			// }
+
+			std::cerr << "[DEBUG] " << "sender ready" << std::endl;
 
 			cl_addr = dest_addr;
 			socketfd = sockfd;
@@ -383,15 +385,15 @@ UwSocket::openConnection(const std::string &path)
 			char tmp_listen[] = {0};
 			char ip[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &cl_addr, ip, sizeof(ip));
-			std::cout << "[DEBUG] " << "waiting for client connection at " << ip
-					  << std::endl;
-			int n_bytes = recvfrom(sockfd,
-					&tmp_listen,
-					sizeof(tmp_listen),
-					0,
-					(struct sockaddr *) &cl_addr,
-					&addrlen);
-			if (n_bytes > 0)
+			// std::cout << "[DEBUG] " << "waiting for client connection at " << ip
+					  // << std::endl;
+			// int n_bytes = recvfrom(sockfd,
+			// 		&tmp_listen,
+			// 		sizeof(tmp_listen),
+			// 		0,
+			// 		(struct sockaddr *) &cl_addr,
+			// 		&addrlen);
+			// if (n_bytes > 0)
 				std::cout << "Server connected to client." << std::endl;
 
 			if (isMulticast) {
