@@ -40,7 +40,7 @@
 #include <functional>
 #include <string>
 
-const int UwLumaXUVModem::SIGNALING_ADDRESS = 55006;
+// const int UwLumaXUVModem::SIGNALING_ADDRESS = 55006;
 
 // const int UwLumaXUVModem::DATA_ADDRESS = 55555;
 

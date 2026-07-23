@@ -331,15 +331,12 @@ createNode
 # $app_ set destAddr_ [expr $opt(dest)]       ; # destAddr_ ID destinatario
 # $app_ set destPort_ 1                       ; # 1 applicativo porta 1, porta interna packet destination port 2 bit di default
 
-# broadcast address (255)
-$app_ set destAddr_ 255
+$app_ set destAddr_ -1                       ; # broadcast address (-1)
 
 # $routing_ addRoute $opt(dest) $opt(dest)    ; # utile per multihop, nexthop->destinatario // multihop altro script
 # $mll_ addentry  $opt(dest) $opt(dest)
-# Route destination 255 to next-hop 255
-$routing_ addRoute 255 255
-# Map IP 255 to MAC 255
-$mll_ addentry 255 255
+$routing_ addRoute -1 -1                    ; # Route destination -1 to next-hop -1
+$mll_ addentry -1 -1                        ; # Map IP -1 to MAC -1
 
 
 #####################
