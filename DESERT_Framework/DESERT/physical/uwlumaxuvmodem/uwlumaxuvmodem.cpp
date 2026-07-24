@@ -395,7 +395,8 @@ UwLumaXUVModem::startTx(Packet *p)
 		status = ModemState::TRANSMITTING;
 		state_lock.unlock();
 
-		if ((send_conn->writeToDevice(payload)) < 0) {
+		int temp{0};
+		if ((temp = send_conn->writeToDevice(payload)) < 0) {
 			printOnLog(LogLevel::ERROR,
 					"LUMAXUVMODEM",
 					"startTx::FAIL_TO_WRITE_DATA_TO_DEVICE");
@@ -405,6 +406,8 @@ UwLumaXUVModem::startTx(Packet *p)
 			status_cv.notify_all();
 			return;
 		}
+
+		std::cerr << "[DEBUG] " << "reached after writeToDevice()" << temp << std::endl;
 
 		std::function<void(UwModem &, Packet * p)> callback =
 				&UwModem::realTxEnded;

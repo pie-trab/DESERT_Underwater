@@ -184,7 +184,7 @@ NS2/MAC/Packer set TXtime_Bits 0
 NS2/MAC/Packer set SStime_Bits 0
 NS2/MAC/Packer set Padding_Bits 0
 NS2/MAC/Packer set debug_ 0
-# changed the sport and dport from 2 to 8, change if errors
+# changed the sport and dport from 2 to 8, to accomodate port 255 for ns broadcast
 UW/UDP/Packer set SPort_Bits 8                      ; # internal DESERT ports
 UW/UDP/Packer set DPort_Bits 8
 UW/UDP/Packer set debug_ 0
@@ -273,6 +273,8 @@ proc createNode { } {
     # Enable log for uwapplication module
     $app_ setLog 3 "uwapplication_$opt(node)_log"
     $app_ setLogLevel 3                            ; # prints to console; only errors at level 1
+
+    $routing_ enableLog
 
     # $mac_ enableLog                     ; # if the log level is already set, this is sufficient to enable all others
     if {$opt(AppSocket) == 1} {

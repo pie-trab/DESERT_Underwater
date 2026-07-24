@@ -385,8 +385,9 @@ UwSocket::openConnection(const std::string &path)
 			char tmp_listen[] = {0};
 			char ip[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &cl_addr, ip, sizeof(ip));
-			// std::cout << "[DEBUG] " << "waiting for client connection at " << ip
-					  // << std::endl;
+			// std::cout << "[DEBUG] " << "waiting for client connection at " <<
+			// ip
+			// << std::endl;
 			// int n_bytes = recvfrom(sockfd,
 			// 		&tmp_listen,
 			// 		sizeof(tmp_listen),
@@ -394,7 +395,7 @@ UwSocket::openConnection(const std::string &path)
 			// 		(struct sockaddr *) &cl_addr,
 			// 		&addrlen);
 			// if (n_bytes > 0)
-				std::cout << "Server connected to client." << std::endl;
+			std::cout << "Server connected to client." << std::endl;
 
 			if (isMulticast) {
 				char ipString[INET_ADDRSTRLEN];
@@ -407,7 +408,8 @@ UwSocket::openConnection(const std::string &path)
 						  << std::endl;
 			}
 
-			std::cerr << "[DEBUG] " << "connection opened successfully" << std::endl;
+			std::cerr << "[DEBUG] " << "connection opened successfully"
+					  << std::endl;
 			socketfd = sockfd;
 
 			return true;
@@ -446,7 +448,7 @@ UwSocket::writeToDevice(const std::string &msg)
 
 	} else { // UDP protocol
 		socklen_t claddr_len = sizeof(cl_addr);
-		std::cout << "writeToDevice " << msg.c_str() << ", size: " << msg.length()<< std::endl;
+		std::cout << "writeToDevice" << msg.c_str() << ", size: " << msg.length()<< std::endl;
 		if (socketfd > 0) {
 			int s_bytes = sendto(socketfd,
 					msg.c_str(),
