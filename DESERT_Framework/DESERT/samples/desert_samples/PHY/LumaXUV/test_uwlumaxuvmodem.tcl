@@ -271,7 +271,7 @@ proc createNode { } {
     $node_ setConnection $uwal_ $modem_ trace
 
     # Enable log for uwapplication module
-    $app_ setLog 3 "uwapplication_$opt(node)_log"
+    # $app_ setLog 3 "uwapplication_$opt(node)_log"
     $app_ setLogLevel 3                            ; # prints to console; only errors at level 1
 
     $routing_ enableLog
@@ -281,6 +281,7 @@ proc createNode { } {
         $app_ setSocketProtocol "TCP"              ; # application-level protocol
         $app_ set Socket_Port_ $opt(app_port)
     }
+
     $app_ set node_ID_  $opt(node)
 
     # assign a port number to the application considered (CBR or VBR)
