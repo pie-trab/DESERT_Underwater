@@ -29,7 +29,7 @@
 # Version: 1.0.0
 #
 
-# Optical modems
+# Multicast communications with LumaXUV optical modems
 
 # if set to 1 the Application listen from the socket port provided in input
 set opt(AppSocket)  1;
@@ -38,30 +38,30 @@ set opt(AppSocket)  1;
 # Terminal's parameter check #
 ##############################
 if {$opt(AppSocket) == 1} {
-    if {$argc != 9} {
+    if {$argc != 8} {
         puts "The script needs 9 input arguments to work"
         # internal to DESERT
         puts "1 - ID of the node"                       ; # simulation ID
-        puts "2 - ID of the receiver"                   ; # packet destination
-        puts "3 - Start time"
-        puts "4 - Stop time"                            ; # stop time set very high in real-time mode
-        puts "5 - Packet generation period (0 if the node doesn't generate data)"       ; # time between packet transmissions/receptions, e.g. 0.1
-        puts "6 - IP address of the interface on the network of the modems"
-        puts "7 - Port for data transmission"
-        puts "8 - IP of the modem for configuration"    ;
-        puts "9 - Application socket port"
+        puts "2 - Start time"
+        puts "3 - Stop time"                            ; # stop time set very high in real-time mode
+        puts "4 - Packet generation period (0 if the node doesn't generate data)"       ; # time between packet transmissions/receptions, e.g. 0.1
+        puts "5 - IP of the interface on the network of the modems"
+        puts "6 - Port for data transmission"           ; # data transmission port
+        puts "7 - IP of the modem for configuration"    ; # TODO
+        puts "8 - Application socket port"              ; # application level port
         puts "Please try again."
+        puts "e.g."
+        puts "ns test_uwlumaxuvmodem.tcl 1 10 100000 0.1 192.168.102.50 55555 192.168.102.101 44444"
         exit
     } else {
         set opt(node)     [lindex $argv 0]
-        set opt(dest)     [lindex $argv 1]
-        set opt(start)    [lindex $argv 2]
-        set opt(stop)     [lindex $argv 3]
-        set opt(traffic)  [lindex $argv 4]
-        set opt(address)  [lindex $argv 5]
-        set opt(port)     [lindex $argv 6]
-        set opt(modem_address)  [lindex $argv 7]
-        set opt(app_port) [lindex $argv 8]
+        set opt(start)    [lindex $argv 1]
+        set opt(stop)     [lindex $argv 2]
+        set opt(traffic)  [lindex $argv 3]
+        set opt(address)  [lindex $argv 4]
+        set opt(port)     [lindex $argv 5]
+        set opt(modem_address)  [lindex $argv 6]
+        set opt(app_port) [lindex $argv 7]
     }
 }
 
@@ -105,7 +105,6 @@ $ns use-scheduler RealTime                          ; # use the modem's schedule
 # Tcl variables  #
 ##################
 # address and port of the modem
-set opt(s_port) 55006
 set address "${opt(address)}:${opt(port)}"          ; # local interface address for data transmission
 set opt(config_address) "${opt(modem_address)}"     ; # modem reception, transmission, etc. messages; in this case, configuration
 
@@ -121,10 +120,6 @@ set tf_name "luamxuv_test.tr"
 #Open a file for writing the trace data
 set tf [open $tf_name w]
 $ns trace-all $tf
-
-# not correct
-# set rng [new RNG]
-# $rng seed         $opt(node)
 
 # random generator
 global defaultRNG
