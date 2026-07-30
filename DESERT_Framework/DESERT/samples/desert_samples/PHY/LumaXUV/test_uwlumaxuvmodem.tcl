@@ -115,7 +115,7 @@ set opt(config_address) "${opt(modem_address)}"     ; # modem reception, transmi
 set time_stop [expr "$opt(stop)+5"]
 
 #Trace file name
-set tf_name "luamxuv_test.tr"
+set tf_name "lumaxuv_test.tr"
 
 #Open a file for writing the trace data
 set tf [open $tf_name w]
@@ -140,7 +140,7 @@ $rnd_gen use-rng $rng
 # variables for the AL module
 Module/UW/AL set Dbit 0
 Module/UW/AL set PSDU 64                            ; # physical service data unit, maximum packet length including everything
-Module/UW/AL set debug_ 0
+Module/UW/AL set debug_ 1
 Module/UW/AL set interframe_period 0.e1             ; # transmission time when fragmentation is enabled
 Module/UW/AL set frame_set_validity 0               ; # 3
 
