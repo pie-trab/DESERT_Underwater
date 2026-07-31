@@ -97,7 +97,6 @@ UwLumaXUVModem::recv(Packet *p)
 
 		ph->worth_tracing = false;
 
-		// TODO
 		ph->srcSpectralMask = getTxSpectralMask(p);
 		ph->srcAntenna = getTxAntenna(p);
 		ph->srcPosition = getPosition();

@@ -29,7 +29,7 @@
 /**
  * @file uwlumaxuvmodem.h
  * @author Pietro Trabuio
- * @version 0.0.1
+ * @version 1.0.0
  * @brief Driver for the LumaX-UV, UW modem
  */
 
