@@ -40,33 +40,8 @@
 #include <functional>
 #include <string>
 
-const int UwLumaXUVModem::SIGNALING_ADDRESS = 55006;
-
-const int UwLumaXUVModem::DATA_ADDRESS = 55555;
-
 const std::chrono::milliseconds UwLumaXUVModem::MODEM_TIMEOUT =
 		std::chrono::milliseconds(3000);
-
-/**
- * Class to create the Otcl shadow object for an object of the class
- * UwLumaXUVModem.
- */
-static class UwLumaXUVModem_TclClass : public TclClass
-{
-
-public:
-	UwLumaXUVModem_TclClass()
-		: TclClass("Module/UW/UwModem/LumaXUV")
-	{
-	}
-
-	TclObject *
-	create(int args, const char *const *argv)
-	{
-		return (new UwLumaXUVModem());
-	}
-
-} class_lumaxuvmodem;
 
 UwLumaXUVModem::UwLumaXUVModem()
 	: UwModem()
@@ -82,14 +57,21 @@ UwLumaXUVModem::UwLumaXUVModem()
 	, tx_thread()
 	, config_conn(new UwSocket()) // TODO
 	, modem_address("")
-	, data_conn(new UwSocket())
+	, send_conn(new UwSocket())
+	, recv_conn(new UwSocket())
 	, data_address("")
 	, signal_buffer()
 	, signal_tag("DRIVER")
 	, premodulation(0)
 {
-	data_conn->setUDP();
-	static_cast<UwSocket *>(data_conn.get())->setMulticast();
+	send_conn->setUDP();
+	send_conn->setMulticast();
+
+	recv_conn->setUDP();
+	recv_conn->setMulticast();
+	// this set recv_conn in reception mode (server receives data)
+	recv_conn->setServer();
+
 	data_buffer.clear();
 }
 
@@ -146,26 +128,20 @@ UwLumaXUVModem::recv(Packet *p)
 int
 UwLumaXUVModem::command(int argc, const char *const *argv)
 {
-	// Tcl &tcl = Tcl::instance();
-	if (argc == 2) {
-		if (!strcmp(argv[1], "setServer")) {
-			data_conn->setServer();
-			return TCL_OK;
-		}
-	}
 	if (argc == 3) {
 		if (!strcmp(argv[1], "setModemAddress")) { // TODO
 			modem_address = argv[2];
 			return TCL_OK;
 		}
-		// local network address that the modem will send multicast messages to
+		// local network interface address that the modem will send multicast
+		// messages to
 		if (!strcmp(argv[1], "setLocalAddress")) {
 			data_address = argv[2];
 			return TCL_OK;
 		}
 		if (!strcmp(argv[1], "setMulticastAddress")) {
-			if (static_cast<UwSocket *>(data_conn.get())
-							->setMulticastAddress(argv[2])) {
+			if (send_conn->setMulticastAddress(argv[2]) &&
+					recv_conn->setMulticastAddress(argv[2])) {
 				return TCL_OK;
 			}
 		}
@@ -243,9 +219,9 @@ UwLumaXUVModem::start()
 	// 	return;
 	// }
 
-	if (!data_conn->openConnection(data_address)) {
+	if (!send_conn->openConnection(data_address)) {
 		std::string err_msg =
-				"DATA_CHANNEL_FAILED_TO_OPEN_WITH_ADDRESS:" + data_address;
+				"SENDING_SOCKET_FAILED_TO_OPEN_WITH_ADDRESS:" + data_address;
 		printOnLog(LogLevel::ERROR, "LUMAXUVMODEM", err_msg);
 		err_msg = "address should have no port";
 		printOnLog(LogLevel::DEBUG, "LUMAXUVMODEM", err_msg);
@@ -253,16 +229,26 @@ UwLumaXUVModem::start()
 	} else {
 		printOnLog(LogLevel::INFO,
 				"LUMAXUVMODEM",
-				"DATA_CONNECTION_ESTABLISHED:" + data_address);
+				"SENDING_CONNECTION_ESTABLISHED:" + data_address);
 	}
 
+	if (!recv_conn->openConnection(data_address)) {
+		std::string err_msg =
+				"RECEIVING_SOCKET_FAILED_TO_OPEN_WITH_ADDRESS:" + data_address;
+		printOnLog(LogLevel::ERROR, "LUMAXUVMODEM", err_msg);
+		err_msg = "address should have no port";
+		printOnLog(LogLevel::DEBUG, "LUMAXUVMODEM", err_msg);
+		return;
+	} else {
+		printOnLog(LogLevel::INFO,
+				"LUMAXUVMODEM",
+				"RECEIVING_CONNECTION_ESTABLISHED:" + data_address);
+	}
 	// set flags to true so loops can start
 	receiving.store(true);
 	transmitting.store(true);
 
 	// Dispatch threads
-	// no signaling in this implementation
-	// sig_thread = std::thread(&UwLumaXUVModem::receivingSignaling, this);
 	rx_thread = std::thread(&UwLumaXUVModem::receivingData, this);
 	tx_thread = std::thread(&UwLumaXUVModem::transmittingData, this);
 
@@ -286,10 +272,15 @@ UwLumaXUVModem::stop()
 		printOnLog(LogLevel::ERROR,
 				"LUMAXUVMODEM",
 				"CONFIG_CONNECTION_UNABLE_TO_CLOSE");
-	if (data_conn->isConnected() && !data_conn->closeConnection())
+	if (send_conn->isConnected() && !send_conn->closeConnection())
 		printOnLog(LogLevel::ERROR,
 				"LUMAXUVMODEM",
-				"DATA_CONNECTION_UNABLE_TO_CLOSE");
+				"SEND_CONNECTION_UNABLE_TO_CLOSE");
+
+	if (recv_conn->isConnected() && !recv_conn->closeConnection())
+		printOnLog(LogLevel::ERROR,
+				"LUMAXUVMODEM",
+				"RECEIVE_CONNECTION_UNABLE_TO_CLOSE");
 
 	if (sig_thread.joinable())
 		sig_thread.join();
@@ -307,7 +298,7 @@ UwLumaXUVModem::receivingData()
 	data_buffer.resize(DATA_BUFFER_LEN, '\0');
 	std::fill(data_buffer.begin(), data_buffer.end(), '\0');
 
-	printOnLog(UwModem::LogLevel::DEBUG, "LUMAXUV", "Reached reading loop ");
+	printOnLog(UwModem::LogLevel::DEBUG, "LUMAXUV", "Reached reading loop");
 	while (receiving.load()) {
 		// std::unique_lock<std::mutex> state_lock(status_m);
 		// if (status_cv.wait_for(state_lock, MODEM_TIMEOUT, [&] {
@@ -315,7 +306,7 @@ UwLumaXUVModem::receivingData()
 		// 	})) {
 
 		auto beg_it = data_buffer.begin();
-		int r_bytes = data_conn->readFromDevice(&(*beg_it), MAX_READ_BYTES);
+		int r_bytes = recv_conn->readFromDevice(&(*beg_it), MAX_READ_BYTES);
 
 		if (r_bytes > 0) {
 			std::unique_lock<std::mutex> state_lock(status_m);
@@ -404,7 +395,8 @@ UwLumaXUVModem::startTx(Packet *p)
 		status = ModemState::TRANSMITTING;
 		state_lock.unlock();
 
-		if ((data_conn->writeToDevice(payload)) < 0) {
+		int temp{0};
+		if ((temp = send_conn->writeToDevice(payload)) < 0) {
 			printOnLog(LogLevel::ERROR,
 					"LUMAXUVMODEM",
 					"startTx::FAIL_TO_WRITE_DATA_TO_DEVICE");
@@ -414,6 +406,8 @@ UwLumaXUVModem::startTx(Packet *p)
 			status_cv.notify_all();
 			return;
 		}
+
+		std::cerr << "[DEBUG] " << "reached after writeToDevice()" << temp << std::endl;
 
 		std::function<void(UwModem &, Packet * p)> callback =
 				&UwModem::realTxEnded;

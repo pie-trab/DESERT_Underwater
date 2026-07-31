@@ -178,7 +178,7 @@ private:
 	 * Bool value that enables or disables multicast functionality
 	 */
 	bool isMulticast;
-
+	
 	/**
 	 * Socket address
 	 */

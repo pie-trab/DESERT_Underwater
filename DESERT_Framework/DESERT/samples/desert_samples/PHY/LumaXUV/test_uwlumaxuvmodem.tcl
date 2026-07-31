@@ -29,7 +29,7 @@
 # Version: 1.0.0
 #
 
-# Optical modems
+# Multicast communications with LumaXUV optical modems
 
 # if set to 1 the Application listen from the socket port provided in input
 set opt(AppSocket)  1;
@@ -38,30 +38,30 @@ set opt(AppSocket)  1;
 # Terminal's parameter check #
 ##############################
 if {$opt(AppSocket) == 1} {
-    if {$argc != 9} {
+    if {$argc != 8} {
         puts "The script needs 9 input arguments to work"
-        # interni a DESERT
-        puts "1 - ID of the node"                   ; # simulation ID
-        puts "2 - ID of the receiver"               ; # packet destination
-        puts "3 - Start time"
-        puts "4 - Stop time"                        ; # stop time molto alto in real time
-        puts "5 - Packet generation period (0 if the node doesn't generate data)"   ; # tempo tra pacchetto e altro invio/ricezione paccheti eg. 0.1
-        puts "6 - IP address of the interface on the network of the modems"
-        puts "7 - Port for data transmission"
-        puts "8 - IP of the modem for configuration" ;
-        puts "9 - Application socket port"
+        # internal to DESERT
+        puts "1 - ID of the node"                       ; # simulation ID
+        puts "2 - Start time"
+        puts "3 - Stop time"                            ; # stop time set very high in real-time mode
+        puts "4 - Packet generation period (0 if the node doesn't generate data)"       ; # time between packet transmissions/receptions, e.g. 0.1
+        puts "5 - IP of the interface on the network of the modems"
+        puts "6 - Port for data transmission"           ; # data transmission port
+        puts "7 - IP of the modem for configuration"    ; # TODO
+        puts "8 - Application socket port"              ; # application level port
         puts "Please try again."
+        puts "e.g."
+        puts "ns test_uwlumaxuvmodem.tcl 1 10 100000 0.1 192.168.102.50 55555 192.168.102.101 44444"
         exit
     } else {
         set opt(node)     [lindex $argv 0]
-        set opt(dest)     [lindex $argv 1]
-        set opt(start)    [lindex $argv 2]
-        set opt(stop)     [lindex $argv 3]
-        set opt(traffic)  [lindex $argv 4]
-        set opt(address)  [lindex $argv 5]
-        set opt(port)     [lindex $argv 6]
-        set opt(modem_address)  [lindex $argv 7]
-        set opt(app_port) [lindex $argv 8]
+        set opt(start)    [lindex $argv 1]
+        set opt(stop)     [lindex $argv 2]
+        set opt(traffic)  [lindex $argv 3]
+        set opt(address)  [lindex $argv 4]
+        set opt(port)     [lindex $argv 5]
+        set opt(modem_address)  [lindex $argv 6]
+        set opt(app_port) [lindex $argv 7]
     }
 }
 
@@ -99,32 +99,27 @@ set ns [new Simulator]
 $ns use-Miracle
 
 #Declare the use of a Real Time Schedule (necessary for the interfacing with real hardware)
-$ns use-scheduler RealTime              ; # usa scheduler del modem
+$ns use-scheduler RealTime                          ; # use the modem's scheduler
 
 ##################
 # Tcl variables  #
 ##################
 # address and port of the modem
-set opt(s_port) 55006
-set address "${opt(address)}:${opt(port)}"              ; # indirizzo interfaccia locale per invio dati, invio dati
-set opt(config_address) "${opt(modem_address)}"   ; # messaggi ricezione, tramissione ecc dal modem, nel mio caso configurazione
+set address "${opt(address)}:${opt(port)}"          ; # local interface address for data transmission
+set opt(config_address) "${opt(modem_address)}"     ; # modem reception, transmission, etc. messages; in this case, configuration
 
 # set MAC address for the modem
-# set addrMAC $opt(node)                                  ; # non necessario
+# set addrMAC $opt(node)                            ; # not necessary
 
 # time when actually to stop the simulation
 set time_stop [expr "$opt(stop)+5"]
 
 #Trace file name
-set tf_name "luamxuv_test.tr"
+set tf_name "lumaxuv_test.tr"
 
 #Open a file for writing the trace data
 set tf [open $tf_name w]
 $ns trace-all $tf
-
-# non corretto
-# set rng [new RNG]
-# $rng seed         $opt(node)
 
 # random generator
 global defaultRNG
@@ -144,34 +139,34 @@ $rnd_gen use-rng $rng
 
 # variables for the AL module
 Module/UW/AL set Dbit 0
-Module/UW/AL set PSDU 64                    ; # physical service data unit lunghezza massima del pacchetto con tutto compreso
-Module/UW/AL set debug_ 0
-Module/UW/AL set interframe_period 0.e1     ; # tempo di invio se ce frammentazione
-Module/UW/AL set frame_set_validity 0       ; # 3
+Module/UW/AL set PSDU 64                            ; # physical service data unit, maximum packet length including everything
+Module/UW/AL set debug_ 1
+Module/UW/AL set interframe_period 0.e1             ; # transmission time when fragmentation is enabled
+Module/UW/AL set frame_set_validity 0               ; # 3
 
 # variables for the packer(s)
-# se non cè frammetazione (il pacchetto sta tutti in uno) tutto a zero questa sezione
+# if there is no fragmentation (the entire packet fits in one frame), set everything in this section to zero
 UW/AL/Packer set SRC_ID_Bits 8
 UW/AL/Packer set PKT_ID_Bits 8
 UW/AL/Packer set FRAME_OFFSET_Bits 15
-UW/AL/Packer set M_BIT_Bits 1               ; # c'è frammentazione di pacchetti
+UW/AL/Packer set M_BIT_Bits 1                       ; # packet fragmentation is enabled
 UW/AL/Packer set DUMMY_CONTENT_Bits 0
 UW/AL/Packer set debug_ 0
 
-NS2/COMMON/Packer set PTYPE_Bits 8          ; # tipo di pacchetto che ricevo o invio, sempre 8
-NS2/COMMON/Packer set SIZE_Bits 8           ; # tipicamente dimensione del payload, 0
-NS2/COMMON/Packer set UID_Bits 8            ; # livello applicativo,
+NS2/COMMON/Packer set PTYPE_Bits 8                  ; # type of packet being received or sent, always 8
+NS2/COMMON/Packer set SIZE_Bits 8                   ; # typically payload size, 0
+NS2/COMMON/Packer set UID_Bits 8                    ; # application level
 NS2/COMMON/Packer set ERROR_Bits 0
-NS2/COMMON/Packer set TIMESTAMP_Bits 8      ; # tempo di invio del pacchetto
-# le prossimi 4 voci solo per multihop, altrimenti 0
+NS2/COMMON/Packer set TIMESTAMP_Bits 8              ; # packet transmission timestamp
+# the following 4 entries are only for multihop; otherwise set to 0
 NS2/COMMON/Packer set PREV_HOP_Bits 8
-NS2/COMMON/Packer set NEXT_HOP_Bits 8       ; # nel caso non serva multihop anche 0
+NS2/COMMON/Packer set NEXT_HOP_Bits 8               ; # set to 0 if multihop is not needed
 NS2/COMMON/Packer set ADDR_TYPE_Bits 0
 NS2/COMMON/Packer set LAST_HOP_Bits 0
 NS2/COMMON/Packer set TXTIME_Bits 0
 NS2/COMMON/Packer set debug_ 0
 
-# ip e mac vanno stessa dimensione nel caso
+# IP and MAC must have the same bit size
 UW/IP/Packer set SAddr_Bits 8
 UW/IP/Packer set DAddr_Bits 8
 UW/IP/Packer set debug_ 0
@@ -184,16 +179,16 @@ NS2/MAC/Packer set TXtime_Bits 0
 NS2/MAC/Packer set SStime_Bits 0
 NS2/MAC/Packer set Padding_Bits 0
 NS2/MAC/Packer set debug_ 0
-
-UW/UDP/Packer set SPort_Bits 2              ; # porte interne a desert
-UW/UDP/Packer set DPort_Bits 2
+# changed the sport and dport from 2 to 8, to accomodate port 255 for ns broadcast
+UW/UDP/Packer set SPort_Bits 8                      ; # internal DESERT ports
+UW/UDP/Packer set DPort_Bits 8
 UW/UDP/Packer set debug_ 0
 
-UW/APP/uwApplication/Packer set SN_FIELD_ 8                 ; # 0 sequence number, nel caso lo gestica più di 8
-UW/APP/uwApplication/Packer set RFFT_FIELD_ 5               ; # 0
-UW/APP/uwApplication/Packer set RFFTVALID_FIELD_ 2          ; # 0
-UW/APP/uwApplication/Packer set PRIORITY_FIELD_ 8           ; # 0
-UW/APP/uwApplication/Packer set PAYLOADMSG_FIELD_SIZE_ 8    ; # lunghezza payload a livello applicativo, che arrival dal socket, da aumentare in ottico piu di 256byte
+UW/APP/uwApplication/Packer set SN_FIELD_ 0                     ; # 0 sequence number; increase if more than 8 bits are needed
+UW/APP/uwApplication/Packer set RFFT_FIELD_ 0                   ; # 0
+UW/APP/uwApplication/Packer set RFFTVALID_FIELD_ 0              ; # 0
+UW/APP/uwApplication/Packer set PRIORITY_FIELD_ 0               ; # 0
+UW/APP/uwApplication/Packer set PAYLOADMSG_FIELD_SIZE_ 64        ; # application-level payload length arriving from the socket; increase above 256 bytes for optical modems
 UW/APP/uwApplication/Packer set debug_ 0
 
 Module/UW/APPLICATION set period_ $opt(traffic)
@@ -204,12 +199,14 @@ if {$opt(AppSocket) == 1} {
 }
 Module/UW/APPLICATION set PoissonTraffic_ 0
 Module/UW/APPLICATION set drop_out_of_order_ 0
-Module/UW/APPLICATION set sea_trial_ 1                  ; # se attivo stampa tempo reale, nei log
+Module/UW/APPLICATION set sea_trial_ 1                      ; # when active, prints real-time timestamps in the logs
 
 # variables for the LumaXUV modem interface
-Module/UW/UwModem/LumaXUV set debug_	 1
+Module/UW/UwModem/LumaXUV set debug_	 0
 Module/UW/UwModem/LumaXUV set buffer_size   2048
 Module/UW/UwModem/LumaXUV set max_read_size 2048
+
+Module/UW/UDP set debug_ 1
 
 ################################
 # Procedure(s) to create nodes #
@@ -269,49 +266,53 @@ proc createNode { } {
     $node_ setConnection $uwal_ $modem_ trace
 
     # Enable log for uwapplication module
-    $app_ setLog 3 "uwapplication_$opt(node)_log"
-    $app_ setLogLevel 3                 ; #  stampa su console, solo errori 1
+    # $app_ setLog 3 "uwapplication_$opt(node)_log"
+    $app_ setLogLevel 3                            ; # prints to console; only errors at level 1
 
-    # $mac_ enableLog                 ; #  se ho gia settato il livello del log mi basta fare questo per aver anche gli altri
+    $routing_ enableLog
+
+    # $mac_ enableLog                     ; # if the log level is already set, this is sufficient to enable all others
     if {$opt(AppSocket) == 1} {
-        $app_ setSocketProtocol "TCP"   ; # protocollo a livello applicativo
+        $app_ setSocketProtocol "TCP"              ; # application-level protocol
         $app_ set Socket_Port_ $opt(app_port)
     }
+
     $app_ set node_ID_  $opt(node)
 
     # assign a port number to the application considered (CBR or VBR)
     set port_ [$transport_ assignPort $app_]
+    $app_ set destPort_ $port_
+
     $ipif_ addr $opt(node)
     $mac_ setMacAddr $opt(node)
     $modem_ set ID_ $opt(node)
     $modem_ setLocalAddress $address
     $modem_ setModemAddress $opt(config_address)
-    $modem_ setServer
-    $modem_ setLogLevel DBG             ; #  ERR, INFO, DBG
+    $modem_ setLogLevel DBG                        ; #  ERR, INFO, DBG
 
     # set packer for Adaptation Layer
     set packer_ [new UW/AL/Packer]
 
-    # creazione dei packer
+    # create the packers
     set packer_payload0 [new NS2/COMMON/Packer]
     set packer_payload1 [new NS2/MAC/Packer]
     set packer_payload2 [new UW/IP/Packer]
     set packer_payload3 [new UW/UDP/Packer]
     set packer_payload4 [new UW/APP/uwApplication/Packer]
 
-    # aggiunta dei packet, ordine importante
+    # add the packers; order is important
     $packer_ addPacker $packer_payload0
     $packer_ addPacker $packer_payload1
     $packer_ addPacker $packer_payload2
     $packer_ addPacker $packer_payload3
     $packer_ addPacker $packer_payload4
 
-    # mette insieme i packet
+    # assemble the packers together
     $uwal_ linkPacker $packer_
 
     $uwal_ set nodeID $opt(node)
 
-    # utili con csma
+    # useful with CSMA
     $mac_ setNoAckMode
     $mac_ initialize
 
@@ -329,12 +330,10 @@ createNode
 # Put here all the commands required to connect nodes in the network (optional), namely, specify end to end connections, fill ARP tables, define routing settings
 
 # connections at the application level
-$app_ set destAddr_ [expr $opt(dest)]       ; # destAddr_ ID destinatario
-$app_ set destPort_ 1                       ; # 1 applicativo porta 1, porta interna packet destination port 2 bit di default
+$app_ set destAddr_ 255                               ; # broadcast address (255)
 
-
-$routing_ addRoute $opt(dest) $opt(dest)    ; # utile per multihop, nexthop->destinatario // multihop altro script
-$mll_ addentry  $opt(dest) $opt(dest)
+$routing_ addRoute 255 255                            ; # Route destination 255 to next-hop 255, broadcast mode
+$mll_ addentry 255 255                                ; # Map IP 255 to MAC 255
 
 #####################
 # Start/Stop Timers #
@@ -351,7 +350,7 @@ if {$opt(traffic) != 0} {
     # }
 }
 
-$ns at $time_stop "$modem_ stop"        ; # comando come scritto o nome procedurat tra virgolette, command modem stop
+$ns at $time_stop "$modem_ stop"                    ; # command as written, or procedure name in quotes
 
 ###################
 # Final Procedure #

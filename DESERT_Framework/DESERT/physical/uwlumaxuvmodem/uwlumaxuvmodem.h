@@ -48,6 +48,7 @@
 #include <thread>
 #include <vector>
 
+
 class UwLumaXUVModem : public UwModem
 {
 
@@ -206,10 +207,17 @@ private:
 	static const int SIGNALING_ADDRESS; /**< Port of the signaling channel */
 
 	/**
-	 * Data connector: used ot retrieve data coming from the modem data socket
+	 * socket used to send data
 	 */
-	std::unique_ptr<UwConnector> data_conn;
-	static const int DATA_ADDRESS; /**< Port of the data channel */
+	std::unique_ptr<UwSocket> send_conn;
+
+	/**
+	 * socket used to receive data
+	 */
+	std::unique_ptr<UwSocket> recv_conn;
+
+	
+	// static const int DATA_ADDRESS; /**< Port of the data channel */
 
 	/** Bytes buffer for the signaling channel (unparsed data) */
 	std::vector<char> signal_buffer;
@@ -241,5 +249,26 @@ private:
 
 	int premodulation; /**< True if premodulation is on, false otherwise */
 };
+
+/**
+ * Class to create the Otcl shadow object for an object of the class
+ * UwLumaXUVModem.
+ */
+static class UwLumaXUVModem_TclClass : public TclClass
+{
+
+public:
+	UwLumaXUVModem_TclClass()
+		: TclClass("Module/UW/UwModem/LumaXUV")
+	{
+	}
+
+	TclObject *
+	create(int args, const char *const *argv)
+	{
+		return (new UwLumaXUVModem());
+	}
+
+} class_lumaxuvmodem;
 
 #endif
