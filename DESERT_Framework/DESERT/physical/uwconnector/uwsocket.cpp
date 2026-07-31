@@ -109,29 +109,26 @@ UwSocket::openConnection(const std::string &path)
 		if (port < 0 || port > 65535)
 			throw std::out_of_range("");
 	} catch (const std::invalid_argument &e) {
-		std::cerr << "UWSOCKET::ERROR::Port must be a number. "
+		std::cerr << "[ERROR]::UWSOCKET::openConnection()::Port must be a number. "
 					 "Invalid address: "
 				  << path << std::endl;
 		return false;
 	} catch (const std::out_of_range &e) {
-		std::cerr << "UWSOCKET::ERROR::Port number too large. "
+		std::cerr << "[ERROR]::UWSOCKET::openConnection()::Port number too large. "
 					 "Invalid address: "
 				  << path << std::endl;
 		return false;
 	} catch (...) {
 		local_errno = errno;
-		std::cerr << "UWSOCKET::ERROR::Error parsing address: " << path
+		std::cerr << "[ERROR]::UWSOCKET::openConnection()::Error parsing address: " << path
 				  << ". Error code: " << local_errno << std::endl;
 	}
-
-	std::cout << "[DEBUG] parsed address: " << address << ":" << port
-			  << std::endl;
 
 	if (proto == Transport::TCP) {
 
 		if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 			local_errno = errno;
-			std::cerr << "UWSOCKET::ERROR::TCP socket() failed. Error code: " +
+			std::cerr << "[ERROR]::UWSOCKET::openConnection()::TCP socket() failed. Error code: " +
 							std::to_string(local_errno)
 					  << std::endl;
 			return false;
@@ -144,7 +141,7 @@ UwSocket::openConnection(const std::string &path)
 					sizeof(int)) == -1) {
 			local_errno = errno;
 			std::cerr
-					<< "UWSOCKET::ERROR::TCP setsockopt(...,SO_REUSEADDR,...) "
+					<< "[ERROR]::UWSOCKET::openConnection()::TCP setsockopt(...,SO_REUSEADDR,...) "
 					   "failed. Error code: " +
 							std::to_string(local_errno)
 					<< std::endl;
@@ -159,7 +156,7 @@ UwSocket::openConnection(const std::string &path)
 
 			if (inet_pton(AF_INET, address.c_str(), &s_address.sin_addr) <= 0) {
 				local_errno = errno;
-				std::cerr << "UWSOCKET::ERROR::TCP inet_pton() failed. Error "
+				std::cerr << "[ERROR]::UWSOCKET::openConnection()::TCP inet_pton() failed. Error "
 							 "code: " +
 								std::to_string(local_errno)
 						  << std::endl;
@@ -170,7 +167,7 @@ UwSocket::openConnection(const std::string &path)
 						(struct sockaddr *) &s_address,
 						sizeof(s_address)) < 0) {
 				local_errno = errno;
-				std::cerr << "UWSOCKET::ERROR::TCP connect() failed. Error "
+				std::cerr << "[ERROR]::UWSOCKET::openConnection()::TCP connect() failed. Error "
 							 "code: " +
 								std::to_string(local_errno)
 						  << std::endl;
@@ -194,7 +191,7 @@ UwSocket::openConnection(const std::string &path)
 						sizeof(s_address)) == -1) {
 				local_errno = errno;
 				std::cerr
-						<< "UWSOCKET::ERROR::TCP bind() failed. Error code: " +
+						<< "[ERROR]::UWSOCKET::openConnection()::TCP bind() failed. Error code: " +
 								std::to_string(local_errno)
 						<< std::endl;
 				return false;
@@ -202,7 +199,7 @@ UwSocket::openConnection(const std::string &path)
 
 			if (listen(sockfd, 1) < 0) {
 				local_errno = errno;
-				std::cerr << "UWSOCKET::ERROR::TCP listen() failed. Error "
+				std::cerr << "[ERROR]::UWSOCKET::openConnection()::TCP listen() failed. Error "
 							 "code: " +
 								std::to_string(local_errno)
 						  << std::endl;
@@ -214,7 +211,7 @@ UwSocket::openConnection(const std::string &path)
 					accept(sockfd, (struct sockaddr *) &cl_address, &len_addr);
 			if (socketfd < 0) {
 				local_errno = errno;
-				std::cerr << "UWSOCKET::ERROR::TCP accept() failed. Error "
+				std::cerr << "[ERROR]::UWSOCKET::openConnection()::TCP accept() failed. Error "
 							 "code: " +
 								std::to_string(local_errno)
 						  << std::endl;
@@ -227,7 +224,7 @@ UwSocket::openConnection(const std::string &path)
 
 		if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 			local_errno = errno;
-			std::cerr << "UWSOCKET::ERROR::UDP socket() failed. Error code: " +
+			std::cerr << "[ERROR]::UWSOCKET::openConnection()::UDP socket() failed. Error code: " +
 							std::to_string(local_errno)
 					  << std::endl;
 			return false;
@@ -239,7 +236,7 @@ UwSocket::openConnection(const std::string &path)
 					&sockoptval,
 					sizeof(int)) == -1) {
 			local_errno = errno;
-			std::cerr << "UWSOCKET::ERROR::UDP setsockopt(..., SO_REUSEADDR, "
+			std::cerr << "[ERROR]::UWSOCKET::openConnection()::UDP setsockopt(..., SO_REUSEADDR, "
 						 "...) failed. Error code: " +
 							std::to_string(local_errno)
 					  << std::endl;
@@ -247,8 +244,6 @@ UwSocket::openConnection(const std::string &path)
 		}
 
 		if (isClient) { // sender UDP
-			std::cerr << "[DEBUG] " << " sender UDP" << std::endl;
-
 			// local interface address
 			struct sockaddr_in dest_addr;
 			std::memset(&dest_addr, 0, sizeof(dest_addr));
@@ -258,9 +253,6 @@ UwSocket::openConnection(const std::string &path)
 
 			// adding multicast configuration to dest_addr
 			if (isMulticast) {
-				std::cerr << "[DEBUG] "
-						  << "local interface to send packets via: " << address
-						  << std::endl;
 
 				struct in_addr local_interface;
 				local_interface.s_addr = inet_addr(address.c_str());
@@ -276,9 +268,8 @@ UwSocket::openConnection(const std::string &path)
 					// TODO remote debug maybe
 					char ip[INET_ADDRSTRLEN];
 					inet_ntop(AF_INET, &local_interface, ip, sizeof(ip));
-					std::cerr << ip << std::endl;
-					std::cerr << "UWSOCKET::ERROR::UDP failed to enable "
-								 "multicast. Error code: "
+					std::cerr << "[ERROR]::UWSOCKET::openConnection()::UDP connection failed to "
+								 "enable multicast. Error code: "
 							  << std::strerror(local_errno)
 							  << ", local_interface: " << ip << std::endl;
 					return false;
@@ -291,10 +282,9 @@ UwSocket::openConnection(const std::string &path)
 							(char *) &ttl,
 							sizeof(ttl)) < 0) {
 					local_errno = errno;
-					std::cerr << "UWSOCKET::ERROR::UDP failed to set TTL. "
-								 "Error code: " +
-									std::to_string(local_errno)
-							  << std::endl;
+					std::cerr << "[ERROR]::UWSOCKET::openConnection()::UDP failed to set TTL. "
+								 "Error code: "
+							  << std::to_string(local_errno) << std::endl;
 					return false;
 				}
 
@@ -308,33 +298,14 @@ UwSocket::openConnection(const std::string &path)
 						&dest_addr.sin_addr);
 			}
 
-			// std::cerr << "[DEBUG] " << "sending init string" << std::endl;
-
-			// int s_bytes = 0;
-			// if ((s_bytes = sendto(sockfd,
-			// 			 &udp_init_string,
-			// 			 sizeof(udp_init_string),
-			// 			 0,
-			// 			 (const struct sockaddr *) &dest_addr,
-			// 			 sizeof(dest_addr))) < 0) {
-
-			// 	local_errno = errno;
-			// 	std::cerr << "UWSOCKET::ERROR::UDP sendto() of init string "
-			// 				 "failed. Error code: " +
-			// 					std::to_string(local_errno)
-			// 			  << std::endl;
-			// 	return false;
-			// }
-
-			std::cerr << "[DEBUG] " << "sender ready" << std::endl;
-
 			cl_addr = dest_addr;
 			socketfd = sockfd;
+
+			std::cout << "[DEBUG]::UWSOCKET::openConnection()::" << "Sender connection opened." << std::endl;
 
 			return true;
 
 		} else { // receiver UDP
-			std::cerr << "[DEBUG] " << "receiver UDP" << std::endl;
 
 			struct sockaddr_in my_addr;
 
@@ -346,11 +317,10 @@ UwSocket::openConnection(const std::string &path)
 			if (bind(sockfd, (struct sockaddr *) &my_addr, sizeof(my_addr)) <
 					0) {
 				local_errno = errno;
-				std::cerr << "[DEBUG] address: " << address
-						  << ", port: " << port << std::endl;
 				std::cerr
-						<< "UWSOCKET::ERROR::UDP bind() failed. Error code: " +
+						<< "[ERROR]::UWSOCKET::openConnection()::UDP bind() failed. Error code: " +
 								std::to_string(local_errno)
+						<< ", local_interface: " << address << ":" << port
 						<< std::endl;
 				return false;
 			}
@@ -358,23 +328,19 @@ UwSocket::openConnection(const std::string &path)
 			struct ip_mreq group;
 			if (isMulticast) {
 				std::memset(&group, 0, sizeof(group));
-				std::cout << "[DEBUG] joining multicast group: "
-						  << multicast_address << ", on network interface "
-						  << address << std::endl;
+
 				inet_pton(AF_INET,
 						multicast_address.c_str(),
 						&group.imr_multiaddr);
 				inet_pton(AF_INET, address.c_str(), &group.imr_interface);
 
-				std::cout << "[DEBUG] address:port: " << address << ":" << port
-						  << std::endl;
 				if (setsockopt(sockfd,
 							IPPROTO_IP,
 							IP_ADD_MEMBERSHIP,
 							(char *) &group,
 							sizeof(group)) < 0) {
 					local_errno = errno;
-					std::cerr << "UWSOCKET::ERROR::UDP "
+					std::cerr << "[ERROR]::UWSOCKET::openConnection()::UDP "
 								 "setsockopt(..,IP_ADD_MEMBERSHIP,..) failed. "
 								 "Error code: "
 							  << std::to_string(errno) << std::endl;
@@ -385,32 +351,11 @@ UwSocket::openConnection(const std::string &path)
 			char tmp_listen[] = {0};
 			char ip[INET_ADDRSTRLEN];
 			inet_ntop(AF_INET, &cl_addr, ip, sizeof(ip));
-			// std::cout << "[DEBUG] " << "waiting for client connection at " <<
-			// ip
-			// << std::endl;
-			// int n_bytes = recvfrom(sockfd,
-			// 		&tmp_listen,
-			// 		sizeof(tmp_listen),
-			// 		0,
-			// 		(struct sockaddr *) &cl_addr,
-			// 		&addrlen);
-			// if (n_bytes > 0)
-			std::cout << "Server connected to client." << std::endl;
 
-			if (isMulticast) {
-				char ipString[INET_ADDRSTRLEN];
-				inet_ntop(AF_INET,
-						&my_addr.sin_addr.s_addr,
-						ipString,
-						INET_ADDRSTRLEN);
-
-				std::cout << "[DEBUG] " << "my_addr value " << ipString
-						  << std::endl;
-			}
-
-			std::cerr << "[DEBUG] " << "connection opened successfully"
-					  << std::endl;
 			socketfd = sockfd;
+
+			std::cout << "[DEBUG]::UWSOCKET::openConnection()::" << "Receiver connection opened."
+					  << std::endl;
 
 			return true;
 		}
@@ -448,7 +393,6 @@ UwSocket::writeToDevice(const std::string &msg)
 
 	} else { // UDP protocol
 		socklen_t claddr_len = sizeof(cl_addr);
-		std::cout << "writeToDevice" << msg.c_str() << ", size: " << msg.length()<< std::endl;
 		if (socketfd > 0) {
 			int s_bytes = sendto(socketfd,
 					msg.c_str(),
@@ -483,10 +427,6 @@ UwSocket::readFromDevice(void *wpos, int maxlen)
 			return -1;
 
 		socklen_t addrlen = sizeof(cl_addr);
-
-		// TODO remove
-		char ipString[INET_ADDRSTRLEN];
-		inet_ntop(AF_INET, &cl_addr.sin_addr.s_addr, ipString, INET_ADDRSTRLEN);
 
 		int n_bytes = recvfrom(socketfd,
 				wpos,

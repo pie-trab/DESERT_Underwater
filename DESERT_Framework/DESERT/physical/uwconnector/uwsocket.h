@@ -130,7 +130,7 @@ public:
 	setUDP()
 	{
 		proto = Transport::UDP;
-		std::cout << "UDP set" << std::endl;
+		std::cout << "[DEBUG]::UWSOCKET::setUDP()::" << "UDP set" << std::endl;
 	};
 	/**
 	 * Method that sets SERVER role
@@ -178,7 +178,7 @@ private:
 	 * Bool value that enables or disables multicast functionality
 	 */
 	bool isMulticast;
-	
+
 	/**
 	 * Socket address
 	 */

@@ -140,7 +140,7 @@ $rnd_gen use-rng $rng
 # variables for the AL module
 Module/UW/AL set Dbit 0
 Module/UW/AL set PSDU 64                            ; # physical service data unit, maximum packet length including everything
-Module/UW/AL set debug_ 1
+Module/UW/AL set debug_ 0
 Module/UW/AL set interframe_period 0.e1             ; # transmission time when fragmentation is enabled
 Module/UW/AL set frame_set_validity 0               ; # 3
 
@@ -206,7 +206,7 @@ Module/UW/UwModem/LumaXUV set debug_	 0
 Module/UW/UwModem/LumaXUV set buffer_size   2048
 Module/UW/UwModem/LumaXUV set max_read_size 2048
 
-Module/UW/UDP set debug_ 1
+Module/UW/UDP set debug_ 0
 
 ################################
 # Procedure(s) to create nodes #

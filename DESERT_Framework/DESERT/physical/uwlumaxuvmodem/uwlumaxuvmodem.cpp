@@ -26,19 +26,11 @@
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "uwlumaxuvmodem.h"
 #include "phymac-clmsg.h"
 #include "uwmodem.h"
+#include "uwsocket.h"
 
-#include <fcntl.h>
-#include <memory>
-#include <mutex>
-#include <sys/socket.h>
-#include <uwlumaxuvmodem.h>
-#include <uwsocket.h>
-
-#include <algorithm>
-#include <functional>
-#include <string>
 
 const std::chrono::milliseconds UwLumaXUVModem::MODEM_TIMEOUT =
 		std::chrono::milliseconds(3000);
@@ -161,7 +153,7 @@ UwLumaXUVModem::getTxDuration(Packet *p)
 	hdr_uwal *uwalh = HDR_UWAL(p);
 	double tx_duration = -1;
 
-	// With Flexframe modulation, the TX duration is obtained
+	// With Flexframe modulation, the TX duration obtained
 	// dividing the number of samples written by the sampling frequency
 	// (192 kHz by default).
 	// It can be written as a linear function of the packet size:
@@ -223,26 +215,22 @@ UwLumaXUVModem::start()
 		std::string err_msg =
 				"SENDING_SOCKET_FAILED_TO_OPEN_WITH_ADDRESS:" + data_address;
 		printOnLog(LogLevel::ERROR, "LUMAXUVMODEM", err_msg);
-		err_msg = "address should have no port";
-		printOnLog(LogLevel::DEBUG, "LUMAXUVMODEM", err_msg);
 		return;
 	} else {
 		printOnLog(LogLevel::INFO,
 				"LUMAXUVMODEM",
-				"SENDING_CONNECTION_ESTABLISHED:" + data_address);
+				"SENDING_SOCKET_CONNECTION_ESTABLISHED:" + data_address);
 	}
 
 	if (!recv_conn->openConnection(data_address)) {
 		std::string err_msg =
 				"RECEIVING_SOCKET_FAILED_TO_OPEN_WITH_ADDRESS:" + data_address;
 		printOnLog(LogLevel::ERROR, "LUMAXUVMODEM", err_msg);
-		err_msg = "address should have no port";
-		printOnLog(LogLevel::DEBUG, "LUMAXUVMODEM", err_msg);
 		return;
 	} else {
 		printOnLog(LogLevel::INFO,
 				"LUMAXUVMODEM",
-				"RECEIVING_CONNECTION_ESTABLISHED:" + data_address);
+				"RECEIVING_SOCKET_CONNECTION_ESTABLISHED:" + data_address);
 	}
 	// set flags to true so loops can start
 	receiving.store(true);
@@ -275,12 +263,12 @@ UwLumaXUVModem::stop()
 	if (send_conn->isConnected() && !send_conn->closeConnection())
 		printOnLog(LogLevel::ERROR,
 				"LUMAXUVMODEM",
-				"SEND_CONNECTION_UNABLE_TO_CLOSE");
+				"SENDING_SOCKET_CONNECTION_UNABLE_TO_CLOSE");
 
 	if (recv_conn->isConnected() && !recv_conn->closeConnection())
 		printOnLog(LogLevel::ERROR,
 				"LUMAXUVMODEM",
-				"RECEIVE_CONNECTION_UNABLE_TO_CLOSE");
+				"RECEIVING_SOCKET_CONNECTION_UNABLE_TO_CLOSE");
 
 	if (sig_thread.joinable())
 		sig_thread.join();
@@ -298,13 +286,7 @@ UwLumaXUVModem::receivingData()
 	data_buffer.resize(DATA_BUFFER_LEN, '\0');
 	std::fill(data_buffer.begin(), data_buffer.end(), '\0');
 
-	printOnLog(UwModem::LogLevel::DEBUG, "LUMAXUV", "Reached reading loop");
 	while (receiving.load()) {
-		// std::unique_lock<std::mutex> state_lock(status_m);
-		// if (status_cv.wait_for(state_lock, MODEM_TIMEOUT, [&] {
-		// 		return status == ModemState::RECEIVING;
-		// 	})) {
-
 		auto beg_it = data_buffer.begin();
 		int r_bytes = recv_conn->readFromDevice(&(*beg_it), MAX_READ_BYTES);
 
@@ -337,7 +319,7 @@ UwLumaXUVModem::receivingData()
 		} else {
 			printOnLog(UwModem::LogLevel::DEBUG,
 					"LUMAXUV",
-					"failed if to read from device");
+					"failed to read from device");
 		}
 	}
 }
@@ -370,7 +352,6 @@ UwLumaXUVModem::transmittingData()
 		tx_queue.pop();
 		tx_lock.unlock();
 		if (pck) {
-			std::cout << "pacchetto inviato" << std::endl;
 			startTx(pck);
 		}
 
@@ -406,8 +387,6 @@ UwLumaXUVModem::startTx(Packet *p)
 			status_cv.notify_all();
 			return;
 		}
-
-		std::cerr << "[DEBUG] " << "reached after writeToDevice()" << temp << std::endl;
 
 		std::function<void(UwModem &, Packet * p)> callback =
 				&UwModem::realTxEnded;
