@@ -36,18 +36,13 @@
 #ifndef UWMODAMODEM_H
 #define UWMODAMODEM_H
 
-#include <uwconnector.h>
-#include <uwmodem.h>
-#include <uwsocket.h>
+#include "uwconnector.h"
+#include "uwmodem.h"
+#include "uwsocket.h"
 
 #include <atomic>
 #include <condition_variable>
-#include <map>
-#include <mutex>
-#include <string>
 #include <thread>
-#include <vector>
-
 
 class UwLumaXUVModem : public UwModem
 {
