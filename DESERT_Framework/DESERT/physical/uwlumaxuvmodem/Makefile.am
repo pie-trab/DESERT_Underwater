@@ -26,7 +26,9 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-AM_CXXFLAGS = -Wall -ggdb3
+AM_CXXFLAGS = -Wall -ggdb3 $(LIBCURL_CFLAGS)
+
+AM_LDADD = $(LIBCURL_LIBS)
 
 lib_LTLIBRARIES = libuwlumaxuvmodem.la
 
@@ -34,12 +36,13 @@ libuwlumaxuvmodem_la_SOURCES = uwlumaxuvmodem.cpp \
                             initlib.cpp \
                             uwlumaxuvmodem-init.tcl
 
-libuwlumaxuvmodem_la_CPPFLAGS = @NS_CPPFLAGS@ @NSMIRACLE_CPPFLAGS@ @DESERT_CPPFLAGS@
+libuwlumaxuvmodem_la_CPPFLAGS = @NS_CPPFLAGS@ @NSMIRACLE_CPPFLAGS@ @DESERT_CPPFLAGS@$ $(LIBCURL_CFLAGS)
 libuwlumaxuvmodem_la_LDFLAGS =  @NS_LDFLAGS@ @NSMIRACLE_LDFLAGS@ @DESERT_LDFLAGS@
 libuwlumaxuvmodem_la_LIBADD = @NS_LIBADD@ @NSMIRACLE_LIBADD@ @DESERT_LIBADD@ \
 						   @DESERT_UWAL_LIBADD@ \
 						   @DESERT_UWMODEM_LIBADD@ \
-						   @DESERT_UWCONNECTOR_LIBADD@
+						   @DESERT_UWCONNECTOR_LIBADD@ \
+							$(LIBCURL_LIBS)
 
 nodist_libuwlumaxuvmodem_la_SOURCES = initTcl.cc
 BUILT_SOURCES = initTcl.cc

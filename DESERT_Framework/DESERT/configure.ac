@@ -35,6 +35,13 @@ AC_CONFIG_MACRO_DIR([m4])
 
 AC_MSG_NOTICE([DESERT AC_PACKAGE_VERSION])
 
+PKG_PROG_PKG_CONFIG
+
+# Check for libcurl
+PKG_CHECK_MODULES([LIBCURL], [libcurl], [], [
+    AC_MSG_ERROR([libcurl is required for UwLumaXUVModem but was not found.])
+])
+
 AC_PROG_CXX
 AC_PROG_MAKE_SET
 
