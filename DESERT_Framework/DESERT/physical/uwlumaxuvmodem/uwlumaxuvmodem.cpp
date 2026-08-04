@@ -31,6 +31,8 @@
 #include "uwmodem.h"
 #include "uwsocket.h"
 
+#include <curl/curl.h>
+#include <regex>
 
 const std::chrono::milliseconds UwLumaXUVModem::MODEM_TIMEOUT =
 		std::chrono::milliseconds(3000);
@@ -120,7 +122,7 @@ int
 UwLumaXUVModem::command(int argc, const char *const *argv)
 {
 	if (argc == 3) {
-		if (!strcmp(argv[1], "setModemAddress")) { // TODO
+		if (!strcmp(argv[1], "setModemAddress")) {
 			modem_address = argv[2];
 			return TCL_OK;
 		}
@@ -134,6 +136,130 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 			if (send_conn->setMulticastAddress(argv[2]) &&
 					recv_conn->setMulticastAddress(argv[2])) {
 				return TCL_OK;
+			}
+		}
+		// modem settings
+		if (!strcmp(argv[1], "start_state")) {
+			if (std::stoi(argv[2]) == 0 || std::stoi(argv[2]) == 1) {
+				configure("parameters/start_state", argv[2]);
+				return TCL_OK;
+			} else {
+				return TCL_ERROR;
+			}
+		}
+		if (!strcmp(argv[1], "optical_speed")) {
+			if (std::stoi(argv[2]) == 1 && std::stoi(argv[2]) == 4 &&
+					std::stoi(argv[2]) == 6 && std::stoi(argv[2]) == 8 &&
+					std::stoi(argv[2]) == 10) {
+				configure("parameters/optical_speed", argv[2]);
+				return TCL_OK;
+			} else {
+
+				return TCL_ERROR;
+			}
+		}
+		if (!strcmp(argv[1], "nb_led")) {
+			if (std::stoi(argv[2]) >= 1 && std::stoi(argv[2]) <= 5) {
+				configure("parameters/nb_led", argv[2]);
+				return TCL_OK;
+			} else {
+				return TCL_ERROR;
+			}
+		}
+		if (!strcmp(argv[1], "encoding")) {
+			if (std::stoi(argv[2]) == 0 || std::stoi(argv[2]) == 1) {
+				configure("parameters/encoding", argv[2]);
+				return TCL_OK;
+			} else {
+				return TCL_ERROR;
+			}
+		}
+		if (!strcmp(argv[1], "led_tx_pwr_normal")) {
+			if (std::stoi(argv[2]) >= 0 && std::stoi(argv[2]) <= 100) {
+				configure("parameters/led_tx_pwr_normal", argv[2]);
+				return TCL_OK;
+			} else {
+				return TCL_ERROR;
+			}
+		}
+		if (!strcmp(argv[1], "led_tx_pwr_cooldown")) {
+			if (std::stoi(argv[2]) >= 0 && std::stoi(argv[2]) <= 100) {
+				configure("parameters/led_tx_pwr_cooldown", argv[2]);
+				return TCL_OK;
+			} else {
+				return TCL_ERROR;
+			}
+		}
+		if (!strcmp(argv[1], "auto_gain_control")) {
+			if (std::stoi(argv[2]) == 0 || std::stoi(argv[2]) == 1) {
+				configure("parameters/auto_gain_control", argv[2]);
+				return TCL_OK;
+			} else {
+				return TCL_ERROR;
+			}
+		}
+		if (!strcmp(argv[1], "manual_gain")) {
+			if (std::stoi(argv[2]) >= 0 && std::stoi(argv[2]) <= 4000) {
+				configure("parameters/manual_gain", argv[2]);
+				return TCL_OK;
+			} else {
+				return TCL_ERROR;
+			}
+		}
+		if (!strcmp(argv[1], "nb_receivers")) {
+			if (std::stoi(argv[2]) >= 1 && std::stoi(argv[2]) <= 4) {
+				configure("parameters/nb_receivers", argv[2]);
+				return TCL_OK;
+			} else {
+				return TCL_ERROR;
+			}
+		}
+		if (!strcmp(argv[1], "agc_amplitude_adjusti")) {
+			if (std::stoi(argv[2]) >= 0 && std::stoi(argv[2]) <= 4000) {
+				configure("parameters/agc_amplitude_adjusti", argv[2]);
+				return TCL_OK;
+			} else {
+				return TCL_ERROR;
+			}
+		}
+		if (!strcmp(argv[1], "keep_alive_pkt")) {
+			if (std::stoi(argv[2]) == 0 || std::stoi(argv[2]) == 1) {
+				configure("parameters/keep_alive_pkt", argv[2]);
+				return TCL_OK;
+			} else {
+				return TCL_ERROR;
+			}
+		}
+		if (!strcmp(argv[1], "autogain_speed")) {
+			if (std::stoi(argv[2]) >= 0 || std::stoi(argv[2]) <= 2) {
+				configure("parameters/autogain_speed", argv[2]);
+				return TCL_OK;
+			} else {
+				return TCL_ERROR;
+			}
+		}
+		if (!strcmp(argv[1], "signal_filtering_type")) {
+			if (std::stoi(argv[2]) >= 0 || std::stoi(argv[2]) <= 3) {
+				configure("parameters/signal_filtering_type", argv[2]);
+				return TCL_OK;
+			} else {
+				return TCL_ERROR;
+			}
+		}
+		if (!strcmp(argv[1], "auto_power")) {
+			if (std::stoi(argv[2]) == 0 || std::stoi(argv[2]) == 1) {
+				configure("parameters/auto_power", argv[2]);
+				return TCL_OK;
+			} else {
+				return TCL_ERROR;
+			}
+		}
+		if (!strcmp(argv[1], "auto_speed")) {
+			if (std::stoi(argv[2]) == 0 || std::stoi(argv[2]) == 1) {
+				configure("parameters/auto_speed", argv[2]);
+				return TCL_OK;
+			} else {
+				return TCL_ERROR;
 			}
 		}
 	}
@@ -197,6 +323,122 @@ UwLumaXUVModem::recvSyncClMsg(ClMessage *m)
 
 	return MPhy::recvSyncClMsg(m);
 }
+// ----------------------------------------
+// Helper callback required by libcurl to write the GET response into a
+// std::string
+static size_t
+WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+{
+	((std::string *) userp)->append((char *) contents, size * nmemb);
+	return size * nmemb;
+}
+
+bool
+UwLumaXUVModem::configure(std::string param_name, std::string param_value)
+{
+	int value = 0;
+
+	try {
+		value = stoi(param_value);
+	} catch (std::invalid_argument &e) {
+		std::cerr << "[ERROR] invalid value for parameter \"" << param_name
+				  << "\": " << param_value << std::endl;
+		return false; // Changed from -1 to false to match the bool return type
+	}
+
+	// Initialize libcurl (Note: in a multi-threaded app, curl_global_init is
+	// best called once globally at startup)
+	curl_global_init(CURL_GLOBAL_ALL);
+	CURL *curl = curl_easy_init();
+
+	if (curl) {
+		std::string url =
+				"http://" + std::string(modem_address) + "/api/parameters.json";
+
+		std::cout << "[DEBUG] modem_address: " << url << std::endl;
+
+		// ---------------------------------------------------------
+		// 1. PERFORM GET REQUEST
+		// ---------------------------------------------------------
+		std::string get_response;
+		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+		curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L); // Specify GET request
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &get_response);
+
+		CURLcode res = curl_easy_perform(curl);
+
+		if (res != CURLE_OK) {
+			std::cerr << "GET request failed: " << curl_easy_strerror(res)
+					  << std::endl;
+			curl_easy_cleanup(curl);
+			curl_global_cleanup();
+			return false;
+		}
+
+		// CHECK 1: does the parameter exists in the json?
+		std::regex key_pattern("\"" + param_name + "\"\\s*:");
+		if (!std::regex_search(get_response, key_pattern)) {
+			std::cerr << "[ERROR] UWLUMAXMODEM: Parameter '" << param_name
+					  << "' does not exist on the modem. Aborting."
+					  << std::endl;
+			curl_easy_cleanup(curl);
+			return false; // Ritorna errore se il parametro non esiste
+		}
+
+		// CHECK 2: Check if the parameter is already set to the desired value
+		// Using regex to handle potential spacing differences in the JSON
+		// response (e.g., "key": 1 vs "key":1)
+		std::regex value_pattern(
+				"\"" + param_name + "\"\\s*:\\s*" + param_value + "\\b");
+		if (std::regex_search(get_response, value_pattern)) {
+			std::cout << "[DEBUG] Parameter '" << param_name
+					  << "' is already set to " << param_value
+					  << ". Skipping POST request." << std::endl;
+			curl_easy_cleanup(curl);
+			return true;
+		}
+		// ---------------------------------------------------------
+		// 2. PERFORM POST REQUEST (If payload did not match)
+		// ---------------------------------------------------------
+		std::string json_data = "{\"" + param_name + "\":" + param_value + "}";
+		std::cout << "[DEBUG] json_data: " << json_data << std::endl;
+
+		// Reset the write function so we don't accidentally append the POST
+		// response to our GET string
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, NULL);
+
+		// Set the HTTP Header to tell the server we're sending JSON
+		struct curl_slist *headers = NULL;
+		headers = curl_slist_append(headers, "Content-Type: application/json");
+
+		// Set POST options
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+		curl_easy_setopt(curl,
+				CURLOPT_POSTFIELDS,
+				json_data.c_str()); // Automatically switches libcurl to POST
+
+		// Perform the POST request
+		res = curl_easy_perform(curl);
+
+		// Check for errors
+		if (res != CURLE_OK) {
+			std::cerr << "curl_easy_perform() POST failed: "
+					  << curl_easy_strerror(res) << std::endl;
+		} else {
+			std::cout << "\nPOST request successfully sent!" << std::endl;
+		}
+
+		// Cleanup
+		curl_slist_free_all(headers);
+		curl_easy_cleanup(curl);
+	}
+
+	curl_global_cleanup();
+
+	return true;
+}
 
 void
 UwLumaXUVModem::start()
@@ -259,6 +501,7 @@ UwLumaXUVModem::stop()
 		printOnLog(LogLevel::ERROR,
 				"LUMAXUVMODEM",
 				"CONFIG_CONNECTION_UNABLE_TO_CLOSE");
+
 	if (send_conn->isConnected() && !send_conn->closeConnection())
 		printOnLog(LogLevel::ERROR,
 				"LUMAXUVMODEM",
