@@ -195,11 +195,6 @@ private:
 	std::thread rx_thread; /**< Thread managing the data reception process */
 	std::thread tx_thread; /**< Thread managing the data transmission process */
 
-	/**
-	 * Config connector, stores the address of the modem. Only used for
-	 * configuring modem parameters
-	 */
-	std::unique_ptr<UwConnector> config_conn;
 	static const int SIGNALING_ADDRESS; /**< Port of the signaling channel */
 
 	/**

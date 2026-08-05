@@ -49,7 +49,6 @@ UwLumaXUVModem::UwLumaXUVModem()
 	, sig_thread()
 	, rx_thread()
 	, tx_thread()
-	, config_conn(new UwSocket()) // TODO
 	, modem_address("")
 	, send_conn(new UwSocket())
 	, recv_conn(new UwSocket())
@@ -263,7 +262,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 			}
 		}
 	}
-	return UwModem::command(argc, argv);    
+	return UwModem::command(argc, argv);
 }
 
 int
@@ -342,8 +341,10 @@ UwLumaXUVModem::configure(
 	try {
 		value = stoi(param_value);
 	} catch (std::invalid_argument &e) {
-		std::cerr << "[ERROR] invalid value for parameter \"" << param_name
-				  << "\": " << param_value << std::endl;
+		printOnLog(UwModem::LogLevel::ERROR,
+				"UWLUMAXUVMODEM",
+				"invalid value for parameter '" + param_name +
+						"': " + param_value);
 		return false; // Changed from -1 to false to match the bool return type
 	}
 
@@ -356,7 +357,9 @@ UwLumaXUVModem::configure(
 		std::string url = "http://" + std::string(modem_address) + "/api/" +
 				endpoint + ".json";
 
-		std::cout << "[DEBUG] modem_address: " << url << std::endl;
+		printOnLog(UwModem::LogLevel::DEBUG,
+				"UWLUMAXUVMODEM",
+				"modem_address: " + url);
 
 		// ---------------------------------------------------------
 		// 1. PERFORM GET REQUEST
@@ -370,8 +373,10 @@ UwLumaXUVModem::configure(
 		CURLcode res = curl_easy_perform(curl);
 
 		if (res != CURLE_OK) {
-			std::cerr << "GET request failed: " << curl_easy_strerror(res)
-					  << std::endl;
+			printOnLog(UwModem::LogLevel::ERROR,
+					"UWLUMAXUVMODEM",
+					"GET request failed: " +
+							std::string(curl_easy_strerror(res)));
 			curl_easy_cleanup(curl);
 			curl_global_cleanup();
 			return false;
@@ -380,9 +385,12 @@ UwLumaXUVModem::configure(
 		// CHECK 1: does the parameter exists in the json?
 		std::regex key_pattern("\"" + param_name + "\"\\s*:");
 		if (!std::regex_search(get_response, key_pattern)) {
-			std::cerr << "[ERROR] UWLUMAXMODEM: Parameter '" << param_name
-					  << "' does not exist on the modem. Aborting."
-					  << std::endl;
+			printOnLog(UwModem::LogLevel::ERROR,
+					"UWLUMAXUVMODEM",
+					"Parameter '" + param_name +
+							"' does not exist or wrong endpoint '" + endpoint +
+							"'. Check the LumaXUV manual for more "
+							"informations.");
 			curl_easy_cleanup(curl);
 			return false; // Ritorna errore se il parametro non esiste
 		}
@@ -393,9 +401,10 @@ UwLumaXUVModem::configure(
 		std::regex value_pattern(
 				"\"" + param_name + "\"\\s*:\\s*" + param_value + "\\b");
 		if (std::regex_search(get_response, value_pattern)) {
-			std::cout << "[DEBUG] Parameter '" << param_name
-					  << "' is already set to " << param_value
-					  << ". Skipping POST request." << std::endl;
+			printOnLog(UwModem::LogLevel::DEBUG,
+					"UWLUMAXUVMODEM",
+					"Parameter '" + param_name + "' is already set to " +
+							param_value + ". Skipping POST request.");
 			curl_easy_cleanup(curl);
 			return true;
 		}
@@ -403,7 +412,9 @@ UwLumaXUVModem::configure(
 		// 2. PERFORM POST REQUEST (If payload did not match)
 		// ---------------------------------------------------------
 		std::string json_data = "{\"" + param_name + "\":" + param_value + "}";
-		std::cout << "[DEBUG] json_data: " << json_data << std::endl;
+		// printOnLog(UwModem::LogLevel::DEBUG,
+		// 		"UWLUMAXUVMODEM",
+		// 		"json_data: " + json_data);
 
 		// Reset the write function so we don't accidentally append the POST
 		// response to our GET string
@@ -425,10 +436,14 @@ UwLumaXUVModem::configure(
 
 		// Check for errors
 		if (res != CURLE_OK) {
-			std::cerr << "curl_easy_perform() POST failed: "
-					  << curl_easy_strerror(res) << std::endl;
+			printOnLog(UwModem::LogLevel::ERROR,
+					"UWLUMAXUVMODEM",
+					"POST request for " + param_name +
+							" failed: " + curl_easy_strerror(res));
 		} else {
-			std::cout << "\nPOST request successfully sent!" << std::endl;
+			printOnLog(UwModem::LogLevel::DEBUG,
+					"UWLUMAXUVMODEM",
+					"POST request for " + param_name + "successfully sent.");
 		}
 
 		// Cleanup
@@ -445,13 +460,6 @@ void
 UwLumaXUVModem::start()
 {
 	printOnLog(LogLevel::DEBUG, "LUMAXUVMODEM", "STARTING_DRIVER");
-	// TODO implement modem configuration logic
-	// if (!config_conn->openConnection(modem_address)) {
-	// 	std::string err_msg =
-	// 			"CONFIG_CHANNEL_FAILED_TO_OPEN_AT_PORT:" + modem_address;
-	// 	printOnLog(LogLevel::ERROR, "LUMAXUVMODEM", err_msg);
-	// 	return;
-	// }
 
 	if (!send_conn->openConnection(data_address)) {
 		std::string err_msg =
@@ -497,11 +505,6 @@ UwLumaXUVModem::stop()
 
 	if (tx_thread.joinable())
 		tx_thread.join();
-
-	if (config_conn->isConnected() && !config_conn->closeConnection())
-		printOnLog(LogLevel::ERROR,
-				"LUMAXUVMODEM",
-				"CONFIG_CONNECTION_UNABLE_TO_CLOSE");
 
 	if (send_conn->isConnected() && !send_conn->closeConnection())
 		printOnLog(LogLevel::ERROR,
@@ -561,7 +564,7 @@ UwLumaXUVModem::receivingData()
 
 		} else {
 			printOnLog(UwModem::LogLevel::DEBUG,
-					"LUMAXUV",
+					"LUMAXUVMODEM",
 					"failed to read from device");
 		}
 	}
