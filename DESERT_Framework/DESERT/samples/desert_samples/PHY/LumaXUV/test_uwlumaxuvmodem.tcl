@@ -47,7 +47,7 @@ if {$opt(AppSocket) == 1} {
         puts "4 - Packet generation period (0 if the node doesn't generate data)"       ; # time between packet transmissions/receptions, e.g. 0.1
         puts "5 - IP of the interface on the network of the modems"
         puts "6 - Port for data transmission"           ; # data transmission port
-        puts "7 - IP of the modem for configuration"    ; # TODO
+        puts "7 - IP of the modem for configuration"
         puts "8 - Application socket port"              ; # application level port
         puts "Please try again."
         puts "e.g."
@@ -289,6 +289,23 @@ proc createNode { } {
     $modem_ setLocalAddress $address
     $modem_ setModemAddress $opt(config_address)
     $modem_ setLogLevel DBG                        ; #  ERR, INFO, DBG
+    # LumaXUV modem settings. Available settings are the following (see LumaXUV manual for more informations about them):
+    # start_state 0|1
+    # optical_speed {1,4,6,8,10}
+    # nb_led [1-5]
+    # encoding 0|1
+    # led_tx_pwr_normal [0-100]
+    # led_tx_pwr_cooldown [0-100]
+    # auto_gain_control 0|1
+    # manual_gain [0-4000]
+    # nb_receivers [1-4]
+    # agc_amplitude_adjust [0-4000]
+    # keep_alive_pkt 0|1
+    # autogain_speed {0,1,2}
+    # signal_filtering_type {0,1,2,3}
+    # auto_power 0|1
+    # auto_speed 0|1
+    $modem_ start_state 1
 
     # set packer for Adaptation Layer
     set packer_ [new UW/AL/Packer]
