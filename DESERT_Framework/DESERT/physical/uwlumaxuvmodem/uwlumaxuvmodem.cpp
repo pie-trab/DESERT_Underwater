@@ -141,7 +141,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 		// modem settings
 		if (!strcmp(argv[1], "start_state")) {
 			if (std::stoi(argv[2]) == 0 || std::stoi(argv[2]) == 1) {
-				configure("parameters/start_state", argv[2]);
+				configure("parameters", "start_state", argv[2]);
 				return TCL_OK;
 			} else {
 				return TCL_ERROR;
@@ -151,7 +151,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 			if (std::stoi(argv[2]) == 1 && std::stoi(argv[2]) == 4 &&
 					std::stoi(argv[2]) == 6 && std::stoi(argv[2]) == 8 &&
 					std::stoi(argv[2]) == 10) {
-				configure("parameters/optical_speed", argv[2]);
+				configure("parameters", "optical_speed", argv[2]);
 				return TCL_OK;
 			} else {
 
@@ -160,7 +160,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 		}
 		if (!strcmp(argv[1], "nb_led")) {
 			if (std::stoi(argv[2]) >= 1 && std::stoi(argv[2]) <= 5) {
-				configure("parameters/nb_led", argv[2]);
+				configure("parameters", "nb_led", argv[2]);
 				return TCL_OK;
 			} else {
 				return TCL_ERROR;
@@ -168,7 +168,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 		}
 		if (!strcmp(argv[1], "encoding")) {
 			if (std::stoi(argv[2]) == 0 || std::stoi(argv[2]) == 1) {
-				configure("parameters/encoding", argv[2]);
+				configure("parameters", "encoding", argv[2]);
 				return TCL_OK;
 			} else {
 				return TCL_ERROR;
@@ -176,7 +176,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 		}
 		if (!strcmp(argv[1], "led_tx_pwr_normal")) {
 			if (std::stoi(argv[2]) >= 0 && std::stoi(argv[2]) <= 100) {
-				configure("parameters/led_tx_pwr_normal", argv[2]);
+				configure("parameters", "led_tx_pwr_normal", argv[2]);
 				return TCL_OK;
 			} else {
 				return TCL_ERROR;
@@ -184,7 +184,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 		}
 		if (!strcmp(argv[1], "led_tx_pwr_cooldown")) {
 			if (std::stoi(argv[2]) >= 0 && std::stoi(argv[2]) <= 100) {
-				configure("parameters/led_tx_pwr_cooldown", argv[2]);
+				configure("parameters", "led_tx_pwr_cooldown", argv[2]);
 				return TCL_OK;
 			} else {
 				return TCL_ERROR;
@@ -192,7 +192,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 		}
 		if (!strcmp(argv[1], "auto_gain_control")) {
 			if (std::stoi(argv[2]) == 0 || std::stoi(argv[2]) == 1) {
-				configure("parameters/auto_gain_control", argv[2]);
+				configure("parameters", "auto_gain_control", argv[2]);
 				return TCL_OK;
 			} else {
 				return TCL_ERROR;
@@ -200,7 +200,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 		}
 		if (!strcmp(argv[1], "manual_gain")) {
 			if (std::stoi(argv[2]) >= 0 && std::stoi(argv[2]) <= 4000) {
-				configure("parameters/manual_gain", argv[2]);
+				configure("parameters", "manual_gain", argv[2]);
 				return TCL_OK;
 			} else {
 				return TCL_ERROR;
@@ -208,7 +208,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 		}
 		if (!strcmp(argv[1], "nb_receivers")) {
 			if (std::stoi(argv[2]) >= 1 && std::stoi(argv[2]) <= 4) {
-				configure("parameters/nb_receivers", argv[2]);
+				configure("parameters", "nb_receivers", argv[2]);
 				return TCL_OK;
 			} else {
 				return TCL_ERROR;
@@ -216,7 +216,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 		}
 		if (!strcmp(argv[1], "agc_amplitude_adjusti")) {
 			if (std::stoi(argv[2]) >= 0 && std::stoi(argv[2]) <= 4000) {
-				configure("parameters/agc_amplitude_adjusti", argv[2]);
+				configure("parameters", "agc_amplitude_adjusti", argv[2]);
 				return TCL_OK;
 			} else {
 				return TCL_ERROR;
@@ -224,7 +224,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 		}
 		if (!strcmp(argv[1], "keep_alive_pkt")) {
 			if (std::stoi(argv[2]) == 0 || std::stoi(argv[2]) == 1) {
-				configure("parameters/keep_alive_pkt", argv[2]);
+				configure("parameters", "keep_alive_pkt", argv[2]);
 				return TCL_OK;
 			} else {
 				return TCL_ERROR;
@@ -232,7 +232,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 		}
 		if (!strcmp(argv[1], "autogain_speed")) {
 			if (std::stoi(argv[2]) >= 0 || std::stoi(argv[2]) <= 2) {
-				configure("parameters/autogain_speed", argv[2]);
+				configure("parameters", "autogain_speed", argv[2]);
 				return TCL_OK;
 			} else {
 				return TCL_ERROR;
@@ -240,7 +240,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 		}
 		if (!strcmp(argv[1], "signal_filtering_type")) {
 			if (std::stoi(argv[2]) >= 0 || std::stoi(argv[2]) <= 3) {
-				configure("parameters/signal_filtering_type", argv[2]);
+				configure("parameters", "signal_filtering_type", argv[2]);
 				return TCL_OK;
 			} else {
 				return TCL_ERROR;
@@ -248,7 +248,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 		}
 		if (!strcmp(argv[1], "auto_power")) {
 			if (std::stoi(argv[2]) == 0 || std::stoi(argv[2]) == 1) {
-				configure("parameters/auto_power", argv[2]);
+				configure("parameters", "auto_power", argv[2]);
 				return TCL_OK;
 			} else {
 				return TCL_ERROR;
@@ -256,14 +256,14 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 		}
 		if (!strcmp(argv[1], "auto_speed")) {
 			if (std::stoi(argv[2]) == 0 || std::stoi(argv[2]) == 1) {
-				configure("parameters/auto_speed", argv[2]);
+				configure("parameters", "auto_speed", argv[2]);
 				return TCL_OK;
 			} else {
 				return TCL_ERROR;
 			}
 		}
 	}
-	return UwModem::command(argc, argv);
+	return UwModem::command(argc, argv);    
 }
 
 int
@@ -334,7 +334,8 @@ WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
 }
 
 bool
-UwLumaXUVModem::configure(std::string param_name, std::string param_value)
+UwLumaXUVModem::configure(
+		std::string endpoint, std::string param_name, std::string param_value)
 {
 	int value = 0;
 
@@ -352,8 +353,8 @@ UwLumaXUVModem::configure(std::string param_name, std::string param_value)
 	CURL *curl = curl_easy_init();
 
 	if (curl) {
-		std::string url =
-				"http://" + std::string(modem_address) + "/api/parameters.json";
+		std::string url = "http://" + std::string(modem_address) + "/api/" +
+				endpoint + ".json";
 
 		std::cout << "[DEBUG] modem_address: " << url << std::endl;
 
