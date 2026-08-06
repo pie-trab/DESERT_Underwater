@@ -359,7 +359,7 @@ UwLumaXUVModem::configure(
 
 		printOnLog(UwModem::LogLevel::DEBUG,
 				"UWLUMAXUVMODEM",
-				"modem_address: " + url);
+				"request url: " + url);
 
 		// ---------------------------------------------------------
 		// 1. PERFORM GET REQUEST
@@ -375,7 +375,8 @@ UwLumaXUVModem::configure(
 		if (res != CURLE_OK) {
 			printOnLog(UwModem::LogLevel::ERROR,
 					"UWLUMAXUVMODEM",
-					"GET request failed: " +
+					"failed to connect to the modem for configuration. Check "
+					"the address or the modem state. Error: " +
 							std::string(curl_easy_strerror(res)));
 			curl_easy_cleanup(curl);
 			curl_global_cleanup();
@@ -387,9 +388,9 @@ UwLumaXUVModem::configure(
 		if (!std::regex_search(get_response, key_pattern)) {
 			printOnLog(UwModem::LogLevel::ERROR,
 					"UWLUMAXUVMODEM",
-					"Parameter '" + param_name +
+					"parameter '" + param_name +
 							"' does not exist or wrong endpoint '" + endpoint +
-							"'. Check the LumaXUV manual for more "
+							"' specified. Check the LumaXUV manual for more "
 							"informations.");
 			curl_easy_cleanup(curl);
 			return false; // Ritorna errore se il parametro non esiste
@@ -403,7 +404,7 @@ UwLumaXUVModem::configure(
 		if (std::regex_search(get_response, value_pattern)) {
 			printOnLog(UwModem::LogLevel::DEBUG,
 					"UWLUMAXUVMODEM",
-					"Parameter '" + param_name + "' is already set to " +
+					"parameter '" + param_name + "' is already set to " +
 							param_value + ". Skipping POST request.");
 			curl_easy_cleanup(curl);
 			return true;
@@ -548,7 +549,7 @@ UwLumaXUVModem::receivingData()
 			rx_payload = std::string(beg_it, beg_it + r_bytes);
 			printOnLog(LogLevel::DEBUG,
 					"LUMAXUVMODEM",
-					"receivingData::LEN::" + std::to_string(rx_payload.size()) +
+					"LEN::" + std::to_string(rx_payload.size()) +
 							"::DATA::" + rx_payload);
 
 			Packet *p = Packet::alloc();
