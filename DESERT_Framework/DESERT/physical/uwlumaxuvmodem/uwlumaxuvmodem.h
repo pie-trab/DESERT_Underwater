@@ -207,7 +207,7 @@ private:
 	 */
 	std::unique_ptr<UwSocket> recv_conn;
 
-	
+
 	// static const int DATA_ADDRESS; /**< Port of the data channel */
 
 	/** Bytes buffer for the signaling channel (unparsed data) */
