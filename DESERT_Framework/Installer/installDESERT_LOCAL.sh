@@ -371,7 +371,7 @@ build_TCLCL() {
 # (v) add the "return check" after each compile command. Moreover add "tail -n 50" command when a error compile happen.
 #*
 build_NS() {
-    info_L1 "ns-${NS_VERSION}"
+    info_L1 "${NS_DIR}"
     start="$(date +%s)"
     #------------------------------------------------------------------------------------------
     # The follow operation is necessary to only cross-compile with 32bit machines.
@@ -380,19 +380,14 @@ build_NS() {
     #mv ${DEST_FOLDER}/lib/libtcl8.4.so ${DEST_FOLDER}/lib/libtcl8.4.so.BAK
     #------------------------------------------------------------------------------------------
 
-    info_L2 "patch      [$*]"
-    patch -p1 < ${UNPACKED_FOLDER}/${PATCHES_DIR}/ns-${NS_VERSION}-without-x-cross.patch > "${currentBuildLog}/ns-${NS_VERSION}-$*.log"  2>&1
-    patch -p1 < ${UNPACKED_FOLDER}/${PATCHES_DIR}/ns-${NS_VERSION}-compile.patch >> "${currentBuildLog}/ns-${NS_VERSION}-$*.log"  2>&1
-    patch -p1 < ${UNPACKED_FOLDER}/${PATCHES_DIR}/ns-${NS_VERSION}-fix-gcc-4.7.patch >> "${currentBuildLog}/ns-${NS_VERSION}-$*.log"  2>&1
-    patch -p1 < ${UNPACKED_FOLDER}/${PATCHES_DIR}/ns-real-time.patch >> "${currentBuildLog}/ns-${NS_VERSION}-$*.log"  2>&1
     mv configure.in configure.ac
-    # autoreconf || true >> "${currentBuildLog}/ns-${NS_VERSION}-$*.log"  2>&1
+    # autoreconf || true >> "${currentBuildLog}/${NS_DIR}-$*.log"  2>&1
 
-    autoreconf >> "${currentBuildLog}/ns-${NS_VERSION}-$*.log"  2>&1
+    autoreconf >> "${currentBuildLog}/${NS_DIR}-$*.log"  2>&1
 
     info_L2 "configure  [$*]"
     if [ -f Makefile ] ; then
-        make distclean >> "${currentBuildLog}/ns-${NS_VERSION}-$*.log"  2>&1
+        make distclean >> "${currentBuildLog}/${NS_DIR}-$*.log"  2>&1
     fi
     CXXFLAGS="$CXXFLAGS -Wno-overloaded-virtual"                       \
     ./configure --enable-static                                        \
@@ -405,10 +400,10 @@ build_NS() {
                 --with-tclcl=${currentBuildLog}/tclcl-${TCLCL_VERSION} \
                 --prefix=${DEST_FOLDER}                                \
                 --exec-prefix=${DEST_FOLDER}                           \
-                >> "${currentBuildLog}/ns-${NS_VERSION}-$*.log"  2>&1
+                >> "${currentBuildLog}/${NS_DIR}-$*.log"  2>&1
     if [ $? -ne 0 ] ; then
-        err_L1 "Error during the configuration of ns-${NS_VERSION}! Exiting ..."
-        tail -n 50 ${currentBuildLog}/ns-${NS_VERSION}-$*.log
+        err_L1 "Error during the configuration of ${NS_DIR}! Exiting ..."
+        tail -n 50 ${currentBuildLog}/${NS_DIR}-$*.log
         exit 1
     fi
     #FIXME
@@ -417,19 +412,19 @@ build_NS() {
     printf '#define HAVE_STL 1\n'              >> autoconf.h
 
     info_L2 "make       [$*]"
-    make -j ${MAKE_JOBS} >> "${currentBuildLog}/ns-${NS_VERSION}-$*.log"  2>&1
+    make -j ${MAKE_JOBS} >> "${currentBuildLog}/${NS_DIR}-$*.log"  2>&1
     if [ $? -ne 0 ] ; then
-        err_L1 "Error during the compilation of ns-${NS_VERSION}! Exiting ..."
-        tail -n 50 ${currentBuildLog}/ns-${NS_VERSION}-$*.log
+        err_L1 "Error during the compilation of ${NS_DIR}! Exiting ..."
+        tail -n 50 ${currentBuildLog}/${NS_DIR}-$*.log
         exit 1
     fi
 
     mkdir -p ${DEST_FOLDER}/bin
 	info_L2 "make inst  [$*]"
-    make install-ns >> "${currentBuildLog}/ns-${NS_VERSION}-$*.log"  2>&1
+    make install-ns >> "${currentBuildLog}/${NS_DIR}-$*.log"  2>&1
     if [ $? -ne 0 ] ; then
-        err_L1 "Error during the installation of ns-${NS_VERSION}! Exiting ..."
-        tail -n 50 ${currentBuildLog}/ns-${NS_VERSION}-$*.log
+        err_L1 "Error during the installation of ${NS_DIR}! Exiting ..."
+        tail -n 50 ${currentBuildLog}/${NS_DIR}-$*.log
         exit 1
     fi
 
@@ -479,7 +474,7 @@ build_NSMIRACLE() {
     ./configure --target=${ARCH}                      \
                 --host=${ARCH}                        \
                 --build=${HOST}                       \
-                --with-ns-allinone=${currentBuildLog} \
+                --with-ns-uws=${currentBuildLog} \
                 --prefix=${DEST_FOLDER}               \
                 >> "${currentBuildLog}/${NSMIRACLE_DIR}-$*.log"  2>&1
     if [ $? -ne 0 ] ; then
@@ -547,7 +542,7 @@ build_DESERT() {
     ${ROOT_DESERT}/${DESERT_DIR}/configure --target=${ARCH}                                                   \
                                            --host=${ARCH}                                                     \
                                            --build=${HOST}                                                    \
-                                           --with-ns-allinone=${currentBuildLog}                              \
+                                           --with-ns-uws=${currentBuildLog}                              \
                                            --with-nsmiracle=${currentBuildLog}/${NSMIRACLE_DIR}               \
                                            --prefix=${DEST_FOLDER}                                            \
                                            >> "${currentBuildLog}/desert-${DESERT_VERSION}-$*.log"  2>&1
@@ -627,7 +622,7 @@ build_DESERT_addon() {
                 ${src_addon_path}/configure --target=$ARCH                                                                       \
                                             --host=$ARCH                                                                         \
                                             --build=$HOST                                                                        \
-                                            --with-ns-allinone=${currentBuildLog}                                                \
+                                            --with-ns-uws=${currentBuildLog}                                                \
                                             --with-nsmiracle=${currentBuildLog}/${NSMIRACLE_DIR}                                 \
                                             --with-desert=${DEST_FOLDER}/${DESERT_DIR}-${DESERT_VERSION}-src                     \
                                             --with-desert-build=${DEST_FOLDER}/${DESERT_DIR}-${DESERT_VERSION}-build             \
@@ -644,7 +639,7 @@ build_DESERT_addon() {
                 ${src_addon_path}/configure --target=$ARCH                                                                       \
                                             --host=$ARCH                                                                         \
                                             --build=$HOST                                                                        \
-                                            --with-ns-allinone=${currentBuildLog}                                                \
+                                            --with-ns-uws=${currentBuildLog}                                                \
                                             --with-nsmiracle=${currentBuildLog}/${NSMIRACLE_DIR}                                   \
                                             --with-desert=${DEST_FOLDER}/${DESERT_DIR}-${DESERT_VERSION}-src                     \
                                             --with-desert-build=${DEST_FOLDER}/${DESERT_DIR}-${DESERT_VERSION}-build             \
@@ -904,6 +899,7 @@ build_WOSS() {
     fi
 
     patch -p1 < ${UNPACKED_FOLDER}/${PATCHES_DIR}/woss-remove-nsmiracle-extra-deps.patch >> "${currentBuildLog}/woss-${WOSS_VERSION}-$*.log"  2>&1
+    patch -p1 < ${UNPACKED_FOLDER}/${PATCHES_DIR}/woss-remove-nsallinone-extra-deps.patch >> "${currentBuildLog}/woss-${WOSS_VERSION}-$*.log"  2>&1
     # if [ $? -ne 0 ]
     # then
     #    print_error "woss-$WOSS_VERSION error during patching! Exiting ..."
