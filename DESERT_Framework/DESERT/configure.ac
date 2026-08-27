@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015 Regents of the SIGNET lab, University of Padova.
+# Copyright (c) 2026 Regents of the SIGNET lab, University of Padova.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,8 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-AC_INIT(DESERT,3.6.1)
-AM_INIT_AUTOMAKE
+AC_INIT(DESERT,4.0.0)
+AM_INIT_AUTOMAKE 
 AM_PROG_AR
 
 AC_CONFIG_MACRO_DIR([m4])
@@ -50,7 +50,7 @@ AC_DISABLE_STATIC
 AC_LIBTOOL_WIN32_DLL
 AC_PROG_LIBTOOL
 
-AC_PATH_NS_ALLINONE
+AC_PATH_NS_UWS
 
 AC_ARG_WITH_NSMIRACLE
 
