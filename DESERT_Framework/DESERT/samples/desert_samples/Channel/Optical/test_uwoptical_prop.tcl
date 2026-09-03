@@ -164,7 +164,7 @@ if {$opt(trace_files)} {
 Module/UW/CBR set packetSize_          $opt(pktsize)
 Module/UW/CBR set period_              $opt(cbr_period)
 Module/UW/CBR set PoissonTraffic_      1
-Module/UW/CBR set debug_               0
+# Module/UW/CBR set debug_               0
 
 Module/UW/OPTICAL/PHY   set TxPower_                    $opt(txpower)
 Module/UW/OPTICAL/PHY   set BitRate_                    $opt(bitrate)
@@ -175,13 +175,13 @@ Module/UW/OPTICAL/PHY   set R_                          $opt(shuntRes)
 Module/UW/OPTICAL/PHY   set S_                          $opt(sensitivity)
 Module/UW/OPTICAL/PHY   set T_                          $opt(temperatura)
 Module/UW/OPTICAL/PHY   set Ar_                         $opt(rxArea)
-Module/UW/OPTICAL/PHY   set debug_                      0
+# Module/UW/OPTICAL/PHY   set debug_                      0
 
 Module/UW/OPTICAL/Propagation set Ar_       $opt(rxArea)
 Module/UW/OPTICAL/Propagation set At_       $opt(txArea)
 Module/UW/OPTICAL/Propagation set c_        $opt(c)
 Module/UW/OPTICAL/Propagation set theta_    $opt(theta)
-Module/UW/OPTICAL/Propagation set debug_    0
+# Module/UW/OPTICAL/Propagation set debug_    0
 set propagation [new Module/UW/OPTICAL/Propagation]
 $propagation setOmnidirectional
 $propagation setLUTFileName $opt(atten_LUT)
@@ -240,7 +240,7 @@ proc createNode { id } {
 
     set interf_data($id) [new "MInterference/MIV"]
     $interf_data($id) set maxinterval_ $opt(maxinterval_)
-    $interf_data($id) set debug_       0
+    # $interf_data($id) set debug_       0
 
     $phy($id) setInterference $interf_data($id)
     $phy($id) setPropagation $propagation

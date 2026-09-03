@@ -340,6 +340,7 @@ proc createNode { } {
 #################
 # Create here all the nodes you want to network together
 createNode
+puts "Node created. Ready to send data"
 
 ################################
 # Inter-node module connection #

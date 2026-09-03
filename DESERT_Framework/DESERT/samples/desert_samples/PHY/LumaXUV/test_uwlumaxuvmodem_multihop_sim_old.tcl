@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Regents of the SIGNET lab, University of Padova.
+# Copyright (c) 2026 Regents of the SIGNET lab, University of Padova.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -9,29 +9,25 @@
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
-# 3. Neither the name of the University of Padova (SIGNET lab) nor the
-#    names of its contributors may be used to endorse or promote products
+# 3. Neither the name of the University of Padova (SIGNET lab) nor the 
+#    names of its contributors may be used to endorse or promote products 
 #    derived from this software without specific prior written permission.
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED 
+# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR 
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# Author: Vincenzo Cimino
+# Author: Pietro Trabuio
 # Version: 1.0.0
 #
-
-# To use the SuM modems with DESERT, it is needed to set the PSDU of the AL
-# (Adaptation Layer) to 64 (bytes), which is the maximum size of a SuM packet
-# If a larger PSDU is set, some bytes will be lost
 
 # if set to 1 the Application listen from the socket port provided in input
 set opt(AppSocket)  1;
@@ -209,10 +205,9 @@ Module/UW/CSMA_ALOHA set max_tx_tries_	3
 Module/UW/CSMA_ALOHA set listen_time_	5
 Module/UW/CSMA_ALOHA set alpha_	0.5
 
-# variables for the MODA modem interface
-Module/UW/UwModem/MODA set debug_	 1
-Module/UW/UwModem/MODA set buffer_size   2048
-Module/UW/UwModem/MODA set max_read_size 2048
+Module/UW/UwModem/LumaXUV set debug_ 0
+Module/UW/UwModem/LumaXUV set buffer_size 2048
+Module/UW/UwModem/LumaXUV set max_read_size 2048
 
 ################################
 # Procedure(s) to create nodes #
@@ -228,20 +223,20 @@ proc createNode { } {
     # define the module(s) you want to put in the node
     # APPLICATION LAYER
     set app_ [new Module/UW/APPLICATION]
-
+    
     # TRANSPORT LAYER
     set transport_ [new Module/UW/UDP]
 
     # NETWORK LAYER
     # Static Routing
     set routing_ [new Module/UW/StaticRouting]
-
+    
     # IP interface
     set ipif_ [new Module/UW/IP]
-
+    
     # DATA LINK LAYER - MEDIA LINK LAYER
     set mll_ [new Module/UW/MLL]
-
+    
     # DATA LINK LAYER - MAC LAYER
     set mac_ [new Module/UW/CSMA_ALOHA]
 
@@ -258,10 +253,10 @@ proc createNode { } {
     $node_ addModule 7 $transport_ 1 "UDP"
     $node_ addModule 6 $routing_ 1 "IPR"
     $node_ addModule 5 $ipif_ 1 "IPIF"
-    $node_ addModule 4 $mll_ 1 "ARP"
+    $node_ addModule 4 $mll_ 1 "ARP"  
     $node_ addModule 3 $mac_ 1 "ALOHA"
     $node_ addModule 2 $uwal_ 1 "UWAL"
-    $node_ addModule 1 $modem_ 1 "MODA"
+    $node_ addModule 1 $modem_ 1 "MODA" 
 
     $node_ setConnection $app_ $transport_ trace
     $node_ setConnection $transport_ $routing_ trace
@@ -294,7 +289,7 @@ proc createNode { } {
     # set packer for Adaptation Layer
     set packer_ [new UW/AL/Packer]
 
-    set packer_payload0 [new NS2/COMMON/Packer]
+    set packer_payload0 [new NS2/COMMON/Packer]  
     set packer_payload1 [new NS2/MAC/Packer]
     set packer_payload2 [new UW/IP/Packer]
     set packer_payload3 [new UW/UDP/Packer]
@@ -307,7 +302,7 @@ proc createNode { } {
     $packer_ addPacker $packer_payload4
 
     $uwal_ linkPacker $packer_
-
+    
     $uwal_ set nodeID $opt(node)
 
     $mac_ setNoAckMode
@@ -331,8 +326,6 @@ if { $opt(node) == $opt(node_source) } {
 	$app_ set destAddr_ [expr $opt(node_dest)]
 	$app_ set destPort_ 1
 }
-# NOTE se non `e settato l'indirizzo di rete droppa il pacchetto
-# la sorgente riceve anche
 
 
 # ARP tables
@@ -371,7 +364,7 @@ if { $opt(node) == $opt(node_source) } {
 # Start/Stop Timers #
 #####################
 # Set here the timers to start and/or stop modules (optional)
-# e.g.,
+# e.g., 
 
 $ns at 0 "$modem_ start"
 
@@ -387,7 +380,7 @@ $ns at $time_stop "$modem_ stop"
 ###################
 # Define here the procedure to call at the end of the simulation
 proc finish {} {
-
+    
     global ns tf tf_name opt app_
 
     puts "---------------------------------------------------------------------"
@@ -417,7 +410,7 @@ proc finish {} {
 
     # save traces
     $ns flush-trace
-
+    
     # close files
     close $tf
 }

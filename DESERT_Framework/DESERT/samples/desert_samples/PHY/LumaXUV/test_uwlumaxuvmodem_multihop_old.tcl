@@ -183,7 +183,7 @@ proc createNode {id data_address modem_address} {
 	$modem($id) set ID_ $id
 	$modem($id) setLocalAddress $data_address
 	$modem($id) setModemAddress $modem_address
-	$modem($id) setLogLevel ERR
+	$modem($id) setLogLevel DBG
 	$modem($id) start_state 1
 	$app($id) set node_ID_ $id
 	set app_port($id) [$udp($id) assignPort $app($id)]
