@@ -85,7 +85,7 @@ The PHY computes SNR as `(S * Pr)^2 / Pn` at
 | `opt(attenuation_c)` | `0.043` | m⁻¹ | Constant beam attenuation coefficient `c = a + b` used by the fixed Lambert–Beer model. |
 | `opt(theta)` | `1.0` | rad | Transmitter beam divergence / half-angle used by propagation. |
 | `opt(omnidirectional)` | `0` | `0` / `1` | `0` selects directional propagation; `1` calls `setOmnidirectional`. |
-| `opt(inclination_0)` | `3` | rad | Node 0 optical-axis inclination. |
+| `opt(inclination_0)` | `0` | rad | Node 0 optical-axis inclination; `0` points along +X in this topology. |
 | `opt(inclination_1)` | `π` | rad | Node 1 optical-axis inclination. Together these aim the two modems at one another along X. |
 
 Propagation fields are bound at
