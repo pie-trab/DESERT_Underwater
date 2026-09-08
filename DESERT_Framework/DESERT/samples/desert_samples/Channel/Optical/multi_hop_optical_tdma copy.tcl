@@ -29,8 +29,7 @@
 # Optional command-line arguments are:
 #
 #   ns multi_hop_optical_tdma.tcl \
-#       n_relays cbr_period packet_size hop_length relay_gap depth stop_time \
-#       rngstream attenuation_scale poisson_traffic
+#       n_relays cbr_period packet_size hop_length relay_gap depth stop_time
 #
 # All other parameters, including the per-hop attenuation list, are changed
 # in the parameter section below.  The ordinary optical PHY is intentionally
@@ -61,17 +60,15 @@ set opt(pktsize)               1400      ; # byte: CBR payload size
 set opt(poisson_traffic)       1         ; # 0=periodic CBR, 1=Poisson CBR
 set opt(rngstream)             1         ; # random-number substream
 
-# Geometry.  All modem heads are on the Y axis; depths may vary per modem.
+# Geometry.  All modem heads are on the Y axis at one common depth.
 set opt(hop_length)            20.0      ; # m: normal inter-head hop
 set opt(relay_gap)             1.5       ; # m: distance inside each relay pair
 set opt(depth)                 -10.0     ; # m: negative Z coordinate
-set opt(depths)                {-50.0 -5.0 -5.0 -50.0 -50.0 -5.0} ; # m: optional per-modem depths
 
 # The first value is used only as a fallback for the source modem.  The
 # receiving modem of each hop gets the corresponding value from the list.
 set opt(attenuation_c_default) 0.043     ;# 1/m: clear-water fallback
-set opt(attenuation_c_per_hop) {0.043 0.0 0.043 0.0 0.043}
-set opt(attenuation_scale)   1.0       ; # scale factor for the above list
+set opt(attenuation_c_per_hop) {0.043 0.043 0.043 0.043 0.043}
 
 # Optical physical-layer parameters.
 set opt(freq)                  7.59e14   ; # Hz: center frequency (c/395 nm - blue light carrier)
@@ -83,18 +80,18 @@ set opt(id)                    1.0e-9    ; # A: photodiode dark current
 set opt(il)                    1.0e-6    ; # A: fixed background photocurrent
 set opt(shunt_resistance)      1.49e9    ; # ohm: receiver shunt resistance
 set opt(sensitivity)           0.26      ; # A/W: photodiode sensitivity
-set opt(temperature)           313.15    ; # K: receiver temperature (40°C)
-set opt(rx_area)               330.06e-6 ; # m^2: receiver area
-set opt(tx_area)               36e-6     ; # m^2: transmitter area
+set opt(temperature)           293.15    ; # K: receiver temperature
+set opt(rx_area)               1.1e-6    ; # m^2: receiver area
+set opt(tx_area)               1.0e-5    ; # m^2: transmitter area
 set opt(theta)                 0.524     ; # rad: analytical beam divergence (30 deg half-angle, 60 full-angle)
 
 # TDMA parameters.  The frame is automatically enlarged when necessary so a
 # slot can contain one complete packet plus its guard time.  Set
 # auto_frame_duration to 0 to enforce frame_duration manually.
 set opt(frame_duration)        2.0       ; # s: common TDMA frame duration
-set opt(auto_frame_duration)   1         ; # 2=protect slots automatically
+set opt(auto_frame_duration)   1         ; # 1=protect slots automatically
 set opt(guard_time)            0.01      ; # s: guard time between slots
-set opt(max_packet_per_slot)   2         ; # packets sent by one modem per slot
+set opt(max_packet_per_slot)   1         ; # packets sent by one modem per slot
 set opt(queue_size)            32        ; # packets buffered by each modem
 set opt(maxinterval)           10.0      ; # s: interference history window
 
@@ -110,12 +107,10 @@ set opt(trace_prefix)          "multi_hop_optical_tdma"
 
 # The list of per-hop attenuation values remains in the Tcl file because it
 # has one value per generated link.  The scalar topology/traffic parameters
-# can conveniently be overridden from a shell.  The last three arguments are
-# optional and are useful for automated sweeps.  A final optional argument is
-# a Tcl list of per-modem depths; when omitted, the scalar depth is reused.
+# can conveniently be overridden from a shell.
 if {$argc > 0} {
-    if {$argc < 7 || $argc > 11} {
-        puts "Usage: ns multi_hop_optical_tdma.tcl n_relays cbr_period packet_size hop_length relay_gap depth stop_time ?rngstream? ?attenuation_scale? ?poisson_traffic? ?depths?"
+    if {$argc != 7} {
+        puts "Usage: ns multi_hop_optical_tdma.tcl n_relays cbr_period packet_size hop_length relay_gap depth stop_time"
         exit 1
     }
     set opt(n_relays)    [lindex $argv 0]
@@ -125,23 +120,6 @@ if {$argc > 0} {
     set opt(relay_gap)   [lindex $argv 4]
     set opt(depth)       [lindex $argv 5]
     set opt(stoptime)    [lindex $argv 6]
-    if {$argc >= 8} {
-        set opt(rngstream) [lindex $argv 7]
-    }
-    if {$argc >= 9} {
-        set opt(attenuation_scale) [lindex $argv 8]
-    }
-    if {$argc == 10} {
-        set opt(poisson_traffic) [lindex $argv 9]
-    }
-    if {$argc == 11} {
-        set opt(poisson_traffic) [lindex $argv 9]
-        set opt(depths) [lindex $argv 10]
-    } else {
-        # Command-line topology sweeps use the scalar depth unless an
-        # explicit profile is supplied as the final argument.
-        set opt(depths) {}
-    }
 }
 
 # There are two end modems plus two modem nodes for every relay couple.
@@ -149,18 +127,6 @@ set opt(nn)          [expr {2 + 2 * $opt(n_relays)}]
 set opt(sender_id)   0
 set opt(receiver_id) [expr {1 + 2 * $opt(n_relays)}]
 set opt(n_hops)      [expr {$opt(nn) - 1}]
-
-# Keep the scalar command-line depth useful for topology sweeps.  A supplied
-# depth profile must contain exactly one value per generated modem.
-if {[llength $opt(depths)] == 0} {
-    set opt(depths) {}
-    for {set id 0} {$id < $opt(nn)} {incr id} {
-        lappend opt(depths) $opt(depth)
-    }
-} elseif {[llength $opt(depths)] != $opt(nn)} {
-    puts "Error: depths must contain exactly $opt(nn) values, got [llength $opt(depths)]"
-    exit 1
-}
 
 # Return the attenuation coefficient for a link.  The receiver of hop H is
 # node H+1, so this function is called with H in the range 0..n_hops-1.
@@ -170,14 +136,14 @@ proc attenuationForHop {hop} {
     set values $opt(attenuation_c_per_hop)
     set nvalues [llength $values]
     if {$nvalues == 0} {
-        return [expr {$opt(attenuation_c_default)*$opt(attenuation_scale)}]
+        return $opt(attenuation_c_default)
     }
     if {$hop < $nvalues} {
-        return [expr {[lindex $values $hop]*$opt(attenuation_scale)}]
+        return [lindex $values $hop]
     }
     # Reusing the last value avoids an out-of-range error when the user adds
     # more relay couples without extending the example list immediately.
-    return [expr {[lindex $values end]*$opt(attenuation_scale)}]
+    return [lindex $values end]
 }
 
 # Automatically make a frame long enough for one packet in every slot.  The
@@ -389,7 +355,7 @@ proc createOpticalNode {id} {
         set y [expr {($i + 1) * $opt(hop_length) + ($i + 1) * $opt(relay_gap)}]
     }
     $position($id) setY_ $y
-    $position($id) setZ_ [lindex $opt(depths) $id]
+    $position($id) setZ_ $opt(depth)
 }
 
 ################################
@@ -461,10 +427,8 @@ $ns at $opt(stoptime)  "$cbr($opt(sender_id),$opt(receiver_id)) stop"
 proc finish {} {
     global ns opt cbr mac
 
-    set sender_cbr $cbr($opt(sender_id),$opt(receiver_id))
-    set receiver_cbr $cbr($opt(receiver_id),$opt(sender_id))
-    set sent [$sender_cbr getsentpkts]
-    set received [$receiver_cbr getrecvpkts]
+    set sent [$cbr($opt(sender_id),$opt(receiver_id)) getsentpkts]
+    set received [$cbr($opt(receiver_id),$opt(sender_id)) getrecvpkts]
 
     if {$opt(verbose)} {
         puts "----------------------------------------"
@@ -473,19 +437,13 @@ proc finish {} {
         puts "modem nodes: $opt(nn), hops: $opt(n_hops)"
         puts "hop length: $opt(hop_length) m, relay gap: $opt(relay_gap) m"
         puts "depth: $opt(depth) m"
-        puts "depths: $opt(depths) m"
         puts "TDMA frame: $opt(frame_duration) s, guard: $opt(guard_time) s"
         puts "attenuation c per hop: $opt(attenuation_c_per_hop) 1/m"
-        puts "attenuation scale factor: $opt(attenuation_scale)"
         puts "sent packets: $sent"
         puts "received packets: $received"
-        puts "forward trip time mean: [$receiver_cbr getftt] s"
-        puts "forward trip time std: [$receiver_cbr getfttstd] s"
-        puts "cbr throughput: [$receiver_cbr getthr] bit/s"
         puts "per-hop MAC counters (sent received):"
         for {set id 0} {$id < $opt(nn)} {incr id} {
             puts "  modem $id: [$mac($id) get_sent_pkts] [$mac($id) get_recv_pkts]"
-            puts "  modem $id final queue: [$mac($id) get_buffer_size]"
         }
         puts "----------------------------------------"
     }
