@@ -29,7 +29,8 @@
 # Optional command-line arguments are:
 #
 #   ns multi_hop_optical_tdma.tcl \
-#       n_relays cbr_period packet_size hop_length relay_gap depth stop_time
+#       n_relays cbr_period packet_size hop_length relay_gap depth stop_time \
+#       rngstream attenuation_scale poisson_traffic
 #
 # All other parameters, including the per-hop attenuation list, are changed
 # in the parameter section below.  The ordinary optical PHY is intentionally
@@ -53,52 +54,53 @@
 set opt(n_relays)              2
 
 # Traffic and simulation timing.
-set opt(starttime)             0.1       ;# s: sender application start time
-set opt(stoptime)              20.0      ;# s: sender application stop time
-set opt(cbr_period)            2.0       ;# s: packet generation period
-set opt(pktsize)               1024       ;# byte: CBR payload size
-set opt(poisson_traffic)       1         ;# 0=periodic CBR, 1=Poisson CBR
-set opt(rngstream)             1         ;# random-number substream
+set opt(starttime)             0.1       ; # s: sender application start time
+set opt(stoptime)              20.0      ; # s: sender application stop time
+set opt(cbr_period)            2.0       ; # s: packet generation period
+set opt(pktsize)               1400      ; # byte: CBR payload size
+set opt(poisson_traffic)       1         ; # 0=periodic CBR, 1=Poisson CBR
+set opt(rngstream)             1         ; # random-number substream
 
 # Geometry.  All modem heads are on the Y axis at one common depth.
-set opt(hop_length)            10.0      ;# m: normal inter-head hop
-set opt(relay_gap)             1.0       ;# m: distance inside each relay pair
-set opt(depth)                 -10.0     ;# m: negative Z coordinate
+set opt(hop_length)            20.0      ; # m: normal inter-head hop
+set opt(relay_gap)             1.5       ; # m: distance inside each relay pair
+set opt(depth)                 -10.0     ; # m: negative Z coordinate
 
 # The first value is used only as a fallback for the source modem.  The
 # receiving modem of each hop gets the corresponding value from the list.
 set opt(attenuation_c_default) 0.043     ;# 1/m: clear-water fallback
-set opt(attenuation_c_per_hop) {0.043 0.043 0.043 0.043 0.043}
+set opt(attenuation_c_per_hop) {0.043 0.0 0.043 0.0 0.043}
+set opt(attenuation_scale)   1.0       ; # scale factor for the above list
 
 # Optical physical-layer parameters.
-set opt(freq)                  10000000  ;# Hz: center frequency
-set opt(bw)                    100000    ;# Hz: signal bandwidth
-set opt(bitrate)               1000000   ;# bit/s
-set opt(txpower)               50.0      ;# W: optical transmit power
-set opt(acq_threshold_db)      10.0      ;# dB: receiver acquisition threshold
-set opt(id)                    1.0e-9    ;# A: photodiode dark current
-set opt(il)                    1.0e-6    ;# A: fixed background photocurrent
-set opt(shunt_resistance)      1.49e9    ;# ohm: receiver shunt resistance
-set opt(sensitivity)           0.26      ;# A/W: photodiode sensitivity
-set opt(temperature)           293.15    ;# K: receiver temperature
-set opt(rx_area)               1.1e-6    ;# m^2: receiver area
-set opt(tx_area)               1.0e-5    ;# m^2: transmitter area
-set opt(theta)                 1.0       ;# rad: analytical beam divergence
+set opt(freq)                  7.59e14   ; # Hz: center frequency (c/395 nm - blue light carrier)
+set opt(bw)                    10000000  ; # Hz: signal bandwidth (10MHz)
+set opt(bitrate)               10000000  ; # bit/s (10Mb/s)
+set opt(txpower)               10.0      ; # W: optical transmit power
+set opt(acq_threshold_db)      10.0      ; # dB: receiver acquisition threshold
+set opt(id)                    1.0e-9    ; # A: photodiode dark current
+set opt(il)                    1.0e-6    ; # A: fixed background photocurrent
+set opt(shunt_resistance)      1.49e9    ; # ohm: receiver shunt resistance
+set opt(sensitivity)           0.26      ; # A/W: photodiode sensitivity
+set opt(temperature)           313.15    ; # K: receiver temperature (40°C)
+set opt(rx_area)               330.06e-6 ; # m^2: receiver area
+set opt(tx_area)               36e-6     ; # m^2: transmitter area
+set opt(theta)                 0.524     ; # rad: analytical beam divergence (30 deg half-angle, 60 full-angle)
 
 # TDMA parameters.  The frame is automatically enlarged when necessary so a
 # slot can contain one complete packet plus its guard time.  Set
 # auto_frame_duration to 0 to enforce frame_duration manually.
-set opt(frame_duration)        2.0       ;# s: common TDMA frame duration
-set opt(auto_frame_duration)   1         ;# 1=protect slots automatically
-set opt(guard_time)            0.01      ;# s: guard time between slots
-set opt(max_packet_per_slot)   1         ;# packets sent by one modem per slot
-set opt(queue_size)            32        ;# packets buffered by each modem
-set opt(maxinterval)           10.0      ;# s: interference history window
+set opt(frame_duration)        2.0       ; # s: common TDMA frame duration
+set opt(auto_frame_duration)   1         ; # 2=protect slots automatically
+set opt(guard_time)            0.01      ; # s: guard time between slots
+set opt(max_packet_per_slot)   2         ; # packets sent by one modem per slot
+set opt(queue_size)            32        ; # packets buffered by each modem
+set opt(maxinterval)           10.0      ; # s: interference history window
 
 # Diagnostics and trace output.
-set opt(verbose)               1         ;# 1=print the final summary
-set opt(debug)                 0         ;# 1=enable optical/CBR debug output
-set opt(trace_files)           0         ;# 1=write .tr and .cltr traces
+set opt(verbose)               1         ; # 1=print the final summary
+set opt(debug)                 0         ; # 1=enable optical/CBR debug output
+set opt(trace_files)           0         ; # 1=write .tr and .cltr traces
 set opt(trace_prefix)          "multi_hop_optical_tdma"
 
 ################################
@@ -107,10 +109,11 @@ set opt(trace_prefix)          "multi_hop_optical_tdma"
 
 # The list of per-hop attenuation values remains in the Tcl file because it
 # has one value per generated link.  The scalar topology/traffic parameters
-# can conveniently be overridden from a shell.
+# can conveniently be overridden from a shell.  The last three arguments are
+# optional and are useful for automated sweeps.
 if {$argc > 0} {
-    if {$argc != 7} {
-        puts "Usage: ns multi_hop_optical_tdma.tcl n_relays cbr_period packet_size hop_length relay_gap depth stop_time"
+    if {$argc != 7 && $argc != 8 && $argc != 9 && $argc != 10} {
+        puts "Usage: ns multi_hop_optical_tdma.tcl n_relays cbr_period packet_size hop_length relay_gap depth stop_time ?rngstream? ?attenuation_scale? ?poisson_traffic?"
         exit 1
     }
     set opt(n_relays)    [lindex $argv 0]
@@ -120,6 +123,15 @@ if {$argc > 0} {
     set opt(relay_gap)   [lindex $argv 4]
     set opt(depth)       [lindex $argv 5]
     set opt(stoptime)    [lindex $argv 6]
+    if {$argc >= 8} {
+        set opt(rngstream) [lindex $argv 7]
+    }
+    if {$argc >= 9} {
+        set opt(attenuation_scale) [lindex $argv 8]
+    }
+    if {$argc == 10} {
+        set opt(poisson_traffic) [lindex $argv 9]
+    }
 }
 
 # There are two end modems plus two modem nodes for every relay couple.
@@ -136,14 +148,14 @@ proc attenuationForHop {hop} {
     set values $opt(attenuation_c_per_hop)
     set nvalues [llength $values]
     if {$nvalues == 0} {
-        return $opt(attenuation_c_default)
+        return [expr {$opt(attenuation_c_default)*$opt(attenuation_scale)}]
     }
     if {$hop < $nvalues} {
-        return [lindex $values $hop]
+        return [expr {[lindex $values $hop]*$opt(attenuation_scale)}]
     }
     # Reusing the last value avoids an out-of-range error when the user adds
     # more relay couples without extending the example list immediately.
-    return [lindex $values end]
+    return [expr {[lindex $values end]*$opt(attenuation_scale)}]
 }
 
 # Automatically make a frame long enough for one packet in every slot.  The
@@ -439,6 +451,7 @@ proc finish {} {
         puts "depth: $opt(depth) m"
         puts "TDMA frame: $opt(frame_duration) s, guard: $opt(guard_time) s"
         puts "attenuation c per hop: $opt(attenuation_c_per_hop) 1/m"
+        puts "attenuation scale factor: $opt(attenuation_scale)"
         puts "sent packets: $sent"
         puts "received packets: $received"
         puts "per-hop MAC counters (sent received):"
