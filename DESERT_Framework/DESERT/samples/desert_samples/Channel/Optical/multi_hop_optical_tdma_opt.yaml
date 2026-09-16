@@ -1,0 +1,52 @@
+# Number of relay couples.  Each couple contributes two optical modem nodes.
+opt:
+    n_relays:                          1                                        # Number of relay couples
+    # Traffic and simulation timing.
+    starttime:                         0.1                                      # s: sender application start time
+    stoptime:                          1000.0                                   # s: sender application stop time
+    cbr_period:                        0.1                                      # s: packet generation period
+    pktsize:                           1400                                     # byte: CBR payload size
+    poisson_traffic:                   1                                        # 0=periodic CBR, 1=Poisson CBR
+    rngstream:                         1                                        # random-number substream
+    # Geometry.  All modem heads are on the Y axis depths may vary per modem.
+    hop_length:                        25.0                                     # m: normal inter-head hop
+    relay_gap:                         1.0                                      # m: distance inside each relay pair
+    depth:                             -10.0                                    # m: negative Z coordinate
+    depths:                            [-10.0, -10.0 , -10.0, -10.0 ] # , -5.0, -20.0]     # m: optional per-modem depths
+
+    # The first value is used only as a fallback for the source modem.  The
+    # receiving modem of each hop gets the corresponding value from the list.
+    attenuation_c_default:             0.3                                      # 1/m: clear-water fallback
+    attenuation_c_per_hop:             [0.3, 0.0, 0.3, 0.0, 0.3]                # Link-specific attenuation coefficients
+    attenuation_scale:                 1.0                                      # scale factor for the above list
+
+    # Optical physical-layer parameters.
+    freq:                              7.59e14                                  # Hz: center frequency (c/395 nm - blue light carrier)
+    bw:                                1000000                                 # Hz: signal bandwidth (10MHz)
+    bitrate:                           1000000                                 # bit/s (10Mb/s)
+    txpower:                           10.0                                     # W: optical transmit power
+    acq_threshold_db:                  15.0                                     # dB: receiver acquisition threshold
+    id:                                1.0e-9                                   # A: photodiode dark current
+    il:                                1.0e-6                                   # A: fixed background photocurrent
+    shunt_resistance:                  1.49e9                                   # ohm: receiver shunt resistance
+    sensitivity:                       0.26                                     # A/W: photodiode sensitivity
+    temperature:                       313.15                                   # K: receiver temperature (40°C)
+    rx_area:                           330.06e-6                                # m^2: receiver area
+    tx_area:                           36e-6                                    # m^2: transmitter area
+    theta:                             0.524                                    # rad: analytical beam divergence (30 deg half-angle, 60 full-angle)
+
+    # TDMA parameters.  The frame is automatically enlarged when necessary so a
+    # slot can contain one complete packet plus its guard time.  Set
+    # auto_frame_duration to 0 to enforce frame_duration manually.
+    frame_duration:                    0.1                                      # s: common TDMA frame duration
+    auto_frame_duration:               1                                        # 2=protect slots automatically
+    guard_time:                        0.01                                     # s: guard time between slots
+    max_packet_per_slot:               2                                        # packets sent by one modem per slot
+    queue_size:                        32                                       # packets buffered by each modem
+    maxinterval:                       1.0                                      # s: interference history window
+
+    # Diagnostics and trace output.
+    verbose:                           1                                        # 1=print the final summary
+    debug:                             0                                        # 1=enable optical/CBR debug output
+    trace_files:                       0                                        # 1=write .tr and .cltr traces
+    trace_prefix:                      "multi_hop_optical_tdma"                 # prefix for trace files

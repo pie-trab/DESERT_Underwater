@@ -21,88 +21,41 @@
 #
 # RUNNING THE EXAMPLE
 # -------------------
-# Source the DESERT environment first, then run this file from this directory:
-#
-#   source <DESERT_build>/environment
-#   ns multi_hop_optical_tdma.tcl
-#
 # Optional command-line arguments are:
 #
 #   ns multi_hop_optical_tdma.tcl \
-#       n_relays cbr_period packet_size hop_length relay_gap depth stop_time \
-#       rngstream attenuation_scale poisson_traffic
+#       n_relays \
+#       cbr_period \
+#       packet_size \
+#       hop_length \
+#       relay_gap \
+#       depth \
+#       stop_time \
+#       rngstream \
+#       attenuation_scale \
+#       poisson_traffic \
+#       depths \
+#       optical_txpower \
+#       optical_acq_threshold_db \
+#       optical_theta
 #
 # All other parameters, including the per-hop attenuation list, are changed
-# in the parameter section below.  The ordinary optical PHY is intentionally
+# in the parameter section below.  Optical PHY sensitivity parameters can
+# also be overridden from the command line for automated sweeps.  The ordinary
+# optical PHY is intentionally
 # used here: it needs no WOSS, beam LUT, attenuation LUT, or noise LUT.
 #
-# ATTENUATION PER HOP
-# -------------------
-# opt(attenuation_c_per_hop) is a Tcl list.  Element 0 is the first link
-# (sender -> relay_0_rx), element 1 is the relay-0 internal link, and so on.
-# If the list is empty, opt(attenuation_c_default) is used for every link.  If
-# the list is shorter than the chain, its last value is reused for the
-# remaining links.  This makes the script safe when n_relays is changed while
-# still allowing each link to be configured independently.
 #
 
 ################################
 # User-changeable parameters    #
 ################################
 
-# Number of relay couples.  Each couple contributes two optical modem nodes.
-set opt(n_relays)              2
 
-# Traffic and simulation timing.
-set opt(starttime)             0.1       ; # s: sender application start time
-set opt(stoptime)              20.0      ; # s: sender application stop time
-set opt(cbr_period)            2.0       ; # s: packet generation period
-set opt(pktsize)               1400      ; # byte: CBR payload size
-set opt(poisson_traffic)       1         ; # 0=periodic CBR, 1=Poisson CBR
-set opt(rngstream)             1         ; # random-number substream
+source "get-config.tcl"
 
-# Geometry.  All modem heads are on the Y axis; depths may vary per modem.
-set opt(hop_length)            20.0      ; # m: normal inter-head hop
-set opt(relay_gap)             1.5       ; # m: distance inside each relay pair
-set opt(depth)                 -10.0     ; # m: negative Z coordinate
-set opt(depths)                {-50.0 -5.0 -5.0 -50.0 -50.0 -5.0} ; # m: optional per-modem depths
-
-# The first value is used only as a fallback for the source modem.  The
-# receiving modem of each hop gets the corresponding value from the list.
-set opt(attenuation_c_default) 0.043     ;# 1/m: clear-water fallback
-set opt(attenuation_c_per_hop) {0.043 0.0 0.043 0.0 0.043}
-set opt(attenuation_scale)   1.0       ; # scale factor for the above list
-
-# Optical physical-layer parameters.
-set opt(freq)                  7.59e14   ; # Hz: center frequency (c/395 nm - blue light carrier)
-set opt(bw)                    10000000  ; # Hz: signal bandwidth (10MHz)
-set opt(bitrate)               10000000  ; # bit/s (10Mb/s)
-set opt(txpower)               10.0      ; # W: optical transmit power
-set opt(acq_threshold_db)      10.0      ; # dB: receiver acquisition threshold
-set opt(id)                    1.0e-9    ; # A: photodiode dark current
-set opt(il)                    1.0e-6    ; # A: fixed background photocurrent
-set opt(shunt_resistance)      1.49e9    ; # ohm: receiver shunt resistance
-set opt(sensitivity)           0.26      ; # A/W: photodiode sensitivity
-set opt(temperature)           313.15    ; # K: receiver temperature (40°C)
-set opt(rx_area)               330.06e-6 ; # m^2: receiver area
-set opt(tx_area)               36e-6     ; # m^2: transmitter area
-set opt(theta)                 0.524     ; # rad: analytical beam divergence (30 deg half-angle, 60 full-angle)
-
-# TDMA parameters.  The frame is automatically enlarged when necessary so a
-# slot can contain one complete packet plus its guard time.  Set
-# auto_frame_duration to 0 to enforce frame_duration manually.
-set opt(frame_duration)        2.0       ; # s: common TDMA frame duration
-set opt(auto_frame_duration)   1         ; # 2=protect slots automatically
-set opt(guard_time)            0.01      ; # s: guard time between slots
-set opt(max_packet_per_slot)   2         ; # packets sent by one modem per slot
-set opt(queue_size)            32        ; # packets buffered by each modem
-set opt(maxinterval)           10.0      ; # s: interference history window
-
-# Diagnostics and trace output.
-set opt(verbose)               1         ; # 1=print the final summary
-set opt(debug)                 0         ; # 1=enable optical/CBR debug output
-set opt(trace_files)           0         ; # 1=write .tr and .cltr traces
-set opt(trace_prefix)          "multi_hop_optical_tdma"
+set config_filename "multi_hop_optical_tdma_opt.yaml"
+load-config $config_filename
 
 ################################
 # Optional command-line values  #
@@ -110,12 +63,12 @@ set opt(trace_prefix)          "multi_hop_optical_tdma"
 
 # The list of per-hop attenuation values remains in the Tcl file because it
 # has one value per generated link.  The scalar topology/traffic parameters
-# can conveniently be overridden from a shell.  The last three arguments are
-# optional and are useful for automated sweeps.  A final optional argument is
-# a Tcl list of per-modem depths; when omitted, the scalar depth is reused.
+# can conveniently be overridden from a shell.  The optional arguments after
+# the first seven are useful for automated sweeps.  The depth profile is an
+# empty Tcl argument when omitted, followed by optional optical PHY overrides.
 if {$argc > 0} {
-    if {$argc < 7 || $argc > 11} {
-        puts "Usage: ns multi_hop_optical_tdma.tcl n_relays cbr_period packet_size hop_length relay_gap depth stop_time ?rngstream? ?attenuation_scale? ?poisson_traffic? ?depths?"
+    if {$argc < 7 || $argc > 14} {
+        puts "Usage: ns multi_hop_optical_tdma.tcl n_relays cbr_period packet_size hop_length relay_gap depth stop_time ?rngstream? ?attenuation_scale? ?poisson_traffic? ?depths? ?optical_txpower? ?optical_acq_threshold_db? ?optical_theta?"
         exit 1
     }
     set opt(n_relays)    [lindex $argv 0]
@@ -134,13 +87,22 @@ if {$argc > 0} {
     if {$argc == 10} {
         set opt(poisson_traffic) [lindex $argv 9]
     }
-    if {$argc == 11} {
+    if {$argc >= 11} {
         set opt(poisson_traffic) [lindex $argv 9]
         set opt(depths) [lindex $argv 10]
     } else {
         # Command-line topology sweeps use the scalar depth unless an
         # explicit profile is supplied as the final argument.
         set opt(depths) {}
+    }
+    if {$argc >= 12} {
+        set opt(txpower) [lindex $argv 11]
+    }
+    if {$argc >= 13} {
+        set opt(acq_threshold_db) [lindex $argv 12]
+    }
+    if {$argc >= 14} {
+        set opt(theta) [lindex $argv 13]
     }
 }
 
@@ -410,8 +372,9 @@ for {set id 0} {$id < $opt(nn)} {incr id} {
 $cbr($opt(sender_id),$opt(receiver_id)) set destAddr_ [$ipif($opt(receiver_id)) addr]
 $cbr($opt(sender_id),$opt(receiver_id)) set destPort_ $portnum($opt(receiver_id),$opt(sender_id))
 
-# MLL is the DESERT equivalent of a neighbor/MAC address table.  Populate it
-# for every pair so each static next-hop route can resolve its destination MAC.
+# MLL is the DESERT equivalent of a neighbor/MAC address table.
+# It is populated for every pair so each static next-hop route
+# can resolve its destination MAC.
 for {set src 0} {$src < $opt(nn)} {incr src} {
     for {set dst 0} {$dst < $opt(nn)} {incr dst} {
         if {$src != $dst} {

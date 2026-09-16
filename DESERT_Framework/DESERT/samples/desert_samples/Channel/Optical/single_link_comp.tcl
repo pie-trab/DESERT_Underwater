@@ -70,7 +70,7 @@ set opt(freq)               50000.0   ;# Hz: acoustic center frequency
 set opt(bw)                 26000.0   ;# Hz: signal bandwidth
 set opt(propagation_speed)  1500.0    ;# m/s: sound speed in water
 set opt(bitrate)            20768.0   ;# bit/s: acoustic modem bit rate
-set opt(txpower)            160.0     ;# dB re 1 uPa at 1 m: source level
+set opt(txpower)            180.0     ;# dB re 1 uPa at 1 m: source level
 set opt(acquisition_db)     15.0      ;# dB: PHY acquisition threshold
 set opt(max_tx_range)       200.0     ;# m: PHY range cutoff
 set opt(spreading)          2         ;# practical spreading coefficient
@@ -191,6 +191,10 @@ Module/UW/TDMA set sea_trial_     0
 Module/UW/TDMA set fair_mode      1
 Module/UW/TDMA set guard_time     $opt(guard_time)
 Module/UW/TDMA set tot_slots      $opt(nn)
+# Let the slot drain every packet that physically fits.  The TDMA default is
+# one packet per slot, which would cap this one-link baseline at one packet per
+# frame and hide the acoustic bitrate/range behavior.
+Module/UW/TDMA set max_packet_per_slot 2
 
 # Standard underwater acoustic propagation.  These parameters represent a
 # simple analytical water model; unlike WOSS, it does not use bathymetry,
@@ -346,6 +350,8 @@ proc finish {} {
         puts "sent packets: $sent"
         puts "received packets: $received"
         puts "throughput bps: $throughput"
+        puts "forward trip time mean: [$cbr($opt(receiver_id),$opt(sender_id)) getftt] s"
+        puts "forward trip time std: [$cbr($opt(receiver_id),$opt(sender_id)) getfttstd] s"
         puts "----------------------------------------"
     }
 
