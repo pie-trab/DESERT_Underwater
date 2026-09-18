@@ -340,8 +340,12 @@ proc createOpticalNode {id} {
     $propagation($id) setDirectional
     $propagation($id) setLUTFileName $opt(attenuation_lut_path)
     $propagation($id) setLUTSeparator ","
-    $propagation($id) setLUT
-    $propagation($id) setVariableC
+    if {$opt(attenuation_scale) != 1.0} {
+        $propagation($id) setFixedC
+    } else {
+        $propagation($id) setLUT
+        $propagation($id) setVariableC
+    }
     $propagation($id) set debug_ $opt(debug)
     $phy($id) setPropagation $propagation($id)
 

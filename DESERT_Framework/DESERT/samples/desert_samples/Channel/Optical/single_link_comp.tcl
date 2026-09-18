@@ -77,9 +77,9 @@ set opt(spreading)          2         ;# practical spreading coefficient
 set opt(windspeed)          10.0      ;# m/s: environmental propagation input
 set opt(shipping)           1         ;# shipping activity used by propagation
 
-# TDMA timing.  The script enlarges the frame if a packet plus guard time
-# would not fit in one slot.  This keeps packet-size sweeps safe.
-set opt(frame_duration)     1.0       ;# s: complete two-slot TDMA frame
+# TDMA timing.  The script sizes the frame to fit exactly one packet plus
+# guard time and margin per slot, matching the optical TDMA logic.
+set opt(frame_duration)     0.1       ;# s: base TDMA frame duration (auto-expanded by min_frame_duration)
 set opt(guard_time)         0.01      ;# s: guard time around a slot
 set opt(auto_frame_duration) 1        ;# 1=derive a safe minimum frame
 
@@ -120,8 +120,8 @@ if {$argc > 0} {
 # A packet must fit in one assigned slot.  The additional 20% margin covers
 # MAC/PHY headers and simulator event ordering.  Two modems share the frame.
 set opt(packet_time) [expr {8.0 * $opt(pktsize) / $opt(bitrate)}]
-set opt(min_frame_duration) [expr {2.0 * ($opt(packet_time) + $opt(guard_time)) * 1.20}]
-if {$opt(auto_frame_duration) && $opt(frame_duration) < $opt(min_frame_duration)} {
+set opt(min_frame_duration) [expr {1.0 * ($opt(packet_time) + $opt(guard_time)) * 1.20}]
+if {$opt(auto_frame_duration)} {
     set opt(frame_duration) $opt(min_frame_duration)
 }
 
@@ -191,10 +191,10 @@ Module/UW/TDMA set sea_trial_     0
 Module/UW/TDMA set fair_mode      1
 Module/UW/TDMA set guard_time     $opt(guard_time)
 Module/UW/TDMA set tot_slots      $opt(nn)
-# Let the slot drain every packet that physically fits.  The TDMA default is
-# one packet per slot, which would cap this one-link baseline at one packet per
-# frame and hide the acoustic bitrate/range behavior.
-Module/UW/TDMA set max_packet_per_slot 2
+# Each slot fits one packet plus guard time and margin. Queue is set to 64 packets
+# to accommodate Poisson traffic bursts without artificial early drop.
+Module/UW/TDMA set max_packet_per_slot 1
+Module/UW/TDMA set queue_size_         64
 
 # Standard underwater acoustic propagation.  These parameters represent a
 # simple analytical water model; unlike WOSS, it does not use bathymetry,

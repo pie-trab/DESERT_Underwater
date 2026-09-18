@@ -141,9 +141,11 @@ def make_cases(repetitions: int) -> list[dict[str, object]]:
     for distance in (20.0, 40.0, 60.0, 80.0, 100.0):
         add("total_distance", distance, 2,
             ("acoustic", "optical", "beam_optical"), total_distance=distance)
-    for n_relays in (0, 1, 2, 3, 4):
+    base_hop_length = 25.0
+    for n_relays in (1, 2, 3, 4):
+        tot_dist = (n_relays + 1) * base_hop_length + n_relays * common["relay_gap"]
         add("relay_count", float(n_relays), n_relays,
-            ("acoustic", "optical", "beam_optical"))
+            ("acoustic", "optical", "beam_optical"), total_distance=tot_dist)
     for period in (0.005, 0.01, 0.02, 0.05, 0.1, 0.25, 0.5, 1.0):
         add("offered_traffic", period, 2,
             ("acoustic", "optical", "beam_optical"),
@@ -151,6 +153,12 @@ def make_cases(repetitions: int) -> list[dict[str, object]]:
     for packet_size in (64, 125, 250, 500):
         add("packet_size", float(packet_size), 2,
             ("acoustic", "optical", "beam_optical"), packet_size=packet_size)
+    for c_val in (0.1, 0.3, 0.5, 0.8, 1.2, 1.6, 2.0):
+        add("water_turbidity", float(c_val), 2,
+            ("acoustic", "optical", "beam_optical"), total_distance=50.0, attenuation_scale=c_val / 0.3)
+    for n_relays in (1, 2, 3, 4, 5):
+        add("relays_fixed_100m", float(n_relays), n_relays,
+            ("acoustic", "optical", "beam_optical"), total_distance=100.0)
     return cases
 
 
