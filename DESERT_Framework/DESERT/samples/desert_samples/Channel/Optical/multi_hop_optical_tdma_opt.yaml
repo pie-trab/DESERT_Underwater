@@ -2,14 +2,14 @@
 opt:
     n_relays:                          1                                        # Number of relay couples
     # Traffic and simulation timing.
-    starttime:                         0.1                                      # s: sender application start time
+    starttime:                         0.1                                      # s: sender application start time 
     stoptime:                          1000.0                                   # s: sender application stop time
     cbr_period:                        0.1                                      # s: packet generation period
     pktsize:                           1400                                     # byte: CBR payload size
     poisson_traffic:                   1                                        # 0=periodic CBR, 1=Poisson CBR
     rngstream:                         1                                        # random-number substream
     # Geometry.  All modem heads are on the Y axis depths may vary per modem.
-    hop_length:                        25.0                                     # m: normal inter-head hop
+    hop_length:                        50.0                                     # m: normal inter-head hop
     relay_gap:                         1.0                                      # m: distance inside each relay pair
     depth:                             -10.0                                    # m: negative Z coordinate
     depths:                            [-10.0, -10.0 , -10.0, -10.0 ] # , -5.0, -20.0]     # m: optional per-modem depths
