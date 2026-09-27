@@ -10,20 +10,20 @@
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
-# 3. Neither the name of the University of Padova (SIGNET lab) nor the 
-#    names of its contributors may be used to endorse or promote products 
+# 3. Neither the name of the University of Padova (SIGNET lab) nor the
+#    names of its contributors may be used to endorse or promote products
 #    derived from this software without specific prior written permission.
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED 
-# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR 
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; 
-# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Author: Filippo Campagnaro <campagn1@dei.unipd.it>
@@ -31,18 +31,18 @@
 
 
 ###########
-# This script is used to test data muling in a multimodal acoustic and optical 
-# network. 
+# This script is used to test data muling in a multimodal acoustic and optical
+# network.
 # There are 8 nodes in a rectangle of 4 x 2 nodes with nearest neighbour
 # 1 km apart and an AUV that patrols the network retreiving data packets
-# making a trajectory described in the Waypoints. 
-# The MASTER is placed in the AUV and controls the switch between UW/PHYSICAL 
-# and UW/OPTICAL/PHY layers, according with the received power metrics. 
+# making a trajectory described in the Waypoints.
+# The MASTER is placed in the AUV and controls the switch between UW/PHYSICAL
+# and UW/OPTICAL/PHY layers, according with the received power metrics.
 # The slave switches according to the MASTER behavior.
 # Both acoustic and optical channels and PHY layers are employed.
 #
 ############
-# 
+#
 # N.B.: This example uses the Waypoint mobility model provided by WOSS.
 # For more informations please refer to https://woss.dei.unipd.it
 #
@@ -66,7 +66,7 @@
 #	|  3. UW/MULTI_STACK_CONTROLLER_PHY_SLAVE  |            |  3. UW/MULTI_STACK_CONTROLLER_PHY_MASTER  |
 # +-----------------+------------------------+            +-----------------+-------------------------+
 # | 2. UW/PHYSICAL  | 1. UW/OPTICAL/PHY      |            | 1. UW/OPTICAL/PHY      | 2. UW/PHYSICAL   |
-#	+-----------------+------------------------+	          +------------------------+------------------+                      
+#	+-----------------+------------------------+	          +------------------------+------------------+
 #           |                    |                                 |                      |
 #           |             +------------------------------------------------+              |
 #           |             |                 UW/Optical/Channel             |              |
@@ -116,21 +116,21 @@ $ns use-Miracle
 ##################
 # Tcl variables  #
 ##################
-set opt(start_lat)  	 	  44.51  ;# Starting Latitude
-set opt(start_long)    		13.5   ;# Starting Longitude
-set opt(nn) 			        8.0    ;# Number of nodes
-set opt(pktsize)	 	      125    ;# Packet size in bytes
-set opt(stoptime)        	1000   ;#6235; #820 ;# Stoptime
-set opt(dist_nodes) 		  400    ;# Distance between nodes in m
-set opt(nn_in_row) 		    4      ;# Number of nodes in a row
-set opt(knots)        		2      ;# Speed of the SINK in knots
-set opt(speed)            [expr $opt(knots) * 0.51444444444] ;#Speed of the SINK in m/s
-set opt(node_depth)       125.0
-set opt(time_in_wp)       0.5
-set opt(trigger_time)     5.0 ;#>5
-set opt(time_interval)    10.0
-set opt(rngstream)    1
-set opt(cbr_period) 0.001;#0.01
+set opt(start_lat)              44.51  ;# Starting Latitude
+set opt(start_long)             13.5   ;# Starting Longitude
+set opt(nn)                     8.0    ;# Number of nodes
+set opt(pktsize)                125    ;# Packet size in bytes
+set opt(stoptime)               1000   ;#6235; #820 ;# Stoptime
+set opt(dist_nodes)             400    ;# Distance between nodes in m
+set opt(nn_in_row)              4      ;# Number of nodes in a row
+set opt(knots)                  2      ;# Speed of the SINK in knots
+set opt(speed)                  [expr $opt(knots) * 0.51444444444] ;#Speed of the SINK in m/s
+set opt(node_depth)             125.0
+set opt(time_in_wp)             0.5
+set opt(trigger_time)           5.0 ;#>5
+set opt(time_interval)          10.0
+set opt(rngstream)              1
+set opt(cbr_period)             0.001;#0.01
 
 if {$opt(bash_parameters)} {
   if {$argc != 2} {
@@ -139,7 +139,7 @@ if {$opt(bash_parameters)} {
     puts "If you want to leave the default values, please set to 0"
     puts "the value opt(bash_parameters) in the tcl script"
     puts "Please try again."
-  }   else { 
+  }   else {
     set opt(rngstream)	 	[lindex $argv 0]
     set opt(cbr_period)   [lindex $argv 1]
   }
@@ -148,7 +148,7 @@ if {$opt(bash_parameters)} {
 set opt(starttime)       	0.1
 set opt(txduration)     	[expr $opt(stoptime) - $opt(starttime)]
 
-set opt(txpower)	 	        150;#117 
+set opt(txpower)	 	        150;#117
 set opt(txpower2)           100.0
 set opt(per_tgt)	 	        0.1
 set opt(rx_snr_penalty_db)  0.0
@@ -238,7 +238,7 @@ Module/UW/CBR set PoissonTraffic_    1
 
 # Module/UW/PHYSICAL   set debug_                    1
 Module/UW/PHYSICAL  set BitRate_                   $opt(bitrate)
-Module/UW/PHYSICAL  set AcquisitionThreshold_dB_   5.0 
+Module/UW/PHYSICAL  set AcquisitionThreshold_dB_   5.0
 Module/UW/PHYSICAL  set RxSnrPenalty_dB_           $opt(rx_snr_penalty_db)
 Module/UW/PHYSICAL  set TxSPLMargin_dB_            $opt(tx_margin_db)
 Module/UW/PHYSICAL  set MaxTxSPL_dB_               $opt(txpower)
@@ -324,18 +324,18 @@ Module/UW/MULTI_STACK_CONTROLLER_PHY_SLAVE set min_delay_  [expr 1.79e-4]
 ################################
 
 proc createNode { id } {
-    
+
   global channel channel2 propagation propagation2 data_mask data_mask2 ns cbr position node port portnum ipr ipif channel_estimator
   global phy posdb opt rvposx rvposy rvposz mhrouting mll mac woss_utilities woss_creator db_manager node_depth
   global row
-  
+
   set node($id) [$ns create-M_Node $opt(tracefile) $opt(cltracefile)]
-  
-  set cbr($id)      [new Module/UW/CBR] 
+
+  set cbr($id)      [new Module/UW/CBR]
   set port($id)     [new Module/UW/UDP]
   set ipr($id)      [new Module/UW/StaticRouting]
   set ipif($id)     [new Module/UW/IP]
-  set mll($id)      [new Module/UW/MLL] 
+  set mll($id)      [new Module/UW/MLL]
   set mac($id)      [new Module/UW/CSMA_ALOHA/TRIGGER/NODE]
   set ctr($id)      [new Module/UW/MULTI_STACK_CONTROLLER_PHY_SLAVE]
   set phy($id)      [new Module/UW/PHYSICAL]
@@ -344,7 +344,7 @@ proc createNode { id } {
   $node($id)  addModule 9 $cbr($id)   1  "CBR"
   $node($id)  addModule 8 $port($id)  1  "PRT"
   $node($id)  addModule 7 $ipr($id)   1  "IPR"
-  $node($id)  addModule 6 $ipif($id)  1  "IPF"   
+  $node($id)  addModule 6 $ipif($id)  1  "IPF"
   $node($id)  addModule 5 $mll($id)   1  "MLL"
   $node($id)  addModule 4 $mac($id)   1  "MAC"
   $node($id)  addModule 3 $ctr($id)   1  "CTR"
@@ -357,7 +357,7 @@ proc createNode { id } {
   $node($id) setConnection $ipif($id)  $mll($id)   1
   $node($id) setConnection $mll($id)   $mac($id)   1
   $node($id) setConnection $mac($id)   $ctr($id)   1
-  $node($id) setConnection $ctr($id)   $phy($id)   1 
+  $node($id) setConnection $ctr($id)   $phy($id)   1
   $node($id) setConnection $ctr($id)   $phy2($id)  1
   $node($id) addToChannel  $channel    $phy($id)   1
   $node($id) addToChannel  $channel2   $phy2($id)  1
@@ -393,7 +393,7 @@ proc createNode { id } {
   set curr_lat    [ $woss_utilities getLatfromDistBearing  $opt(start_lat) $opt(start_long) 180.0 $curr_y ]
   set curr_lon    [ $woss_utilities getLongfromDistBearing $opt(start_lat) $opt(start_long) 90.0  $curr_x ]
   set curr_depth [expr $node_depth / $opt(nn) * ($id + 1) - 3]
-  puts "$curr_x $curr_y $curr_depth"
+  puts "coords $curr_x $curr_y $curr_depth"; #coordinate reali
 
   $position($id) setLatitude_  $curr_lat
   $position($id) setLongitude_ $curr_lon
@@ -441,24 +441,24 @@ proc createSink { } {
   set node_sink [$ns create-M_Node $opt(tracefile) $opt(cltracefile)]
 
   for { set cnt 0} {$cnt < $opt(nn)} {incr cnt} {
-    set cbr_sink($cnt)  [new Module/UW/CBR] 
+    set cbr_sink($cnt)  [new Module/UW/CBR]
   }
 
   set port_sink  [new Module/UW/UDP]
   set ipr_sink   [new Module/UW/StaticRouting]
   set ipif_sink  [new Module/UW/IP]
-  set mll_sink   [new Module/UW/MLL] 
+  set mll_sink   [new Module/UW/MLL]
   set mac_sink   [new Module/UW/CSMA_ALOHA/TRIGGER/SINK]
   set ctr_sink   [new Module/UW/MULTI_STACK_CONTROLLER_PHY_MASTER]
   set phy_sink   [new Module/UW/PHYSICAL]
-  set phy_sink2  [new Module/UW/OPTICAL/PHY];#[new Module/MPhy/BPSK]  
+  set phy_sink2  [new Module/UW/OPTICAL/PHY];#[new Module/MPhy/BPSK]
 
   for { set cnt 0} {$cnt < $opt(nn)} {incr cnt} {
     $node_sink addModule 9 $cbr_sink($cnt) 1 "CBR"
   }
   $node_sink addModule 8 $port_sink      1 "PRT"
   $node_sink addModule 7 $ipr_sink       1 "IPR"
-  $node_sink addModule 6 $ipif_sink      1 "IPF"   
+  $node_sink addModule 6 $ipif_sink      1 "IPF"
   $node_sink addModule 5 $mll_sink       1 "MLL"
   $node_sink addModule 4 $mac_sink       1 "MAC"
   $node_sink addModule 3 $ctr_sink       1 "CTR"
@@ -466,11 +466,11 @@ proc createSink { } {
   $node_sink addModule 1 $phy_sink2      1 "PHY"
 
   for { set cnt 0} {$cnt < $opt(nn)} {incr cnt} {
-    $node_sink setConnection $cbr_sink($cnt)  $port_sink  1   
+    $node_sink setConnection $cbr_sink($cnt)  $port_sink  1
   }
   $node_sink setConnection $port_sink $ipr_sink    	      1
   $node_sink setConnection $ipr_sink  $ipif_sink   	      1
-  $node_sink setConnection $ipif_sink $mll_sink    	      1 
+  $node_sink setConnection $ipif_sink $mll_sink    	      1
   $node_sink setConnection $mll_sink  $mac_sink    	      1
   $node_sink setConnection $mac_sink  $ctr_sink           1
   $node_sink setConnection $ctr_sink  $phy_sink    	      1
@@ -519,16 +519,16 @@ proc createSink { } {
   $phy_sink2 setLUTFileName "$opt(LUTpath)"
   $phy_sink2 setLUTSeparator " "
   $phy_sink2 useLUT
-  
+
   $ctr_sink setManualSwitch
   $ctr_sink setAutomaticSwitch
   $ctr_sink setManualLowerlId [$phy_sink Id_]
-  $ctr_sink addLayer          [$phy_sink Id_]  1 
+  $ctr_sink addLayer          [$phy_sink Id_]  1
   $ctr_sink addLayer          [$phy_sink2 Id_] 2
   $ctr_sink addThreshold      [$phy_sink Id_] [$phy_sink2 Id_] $opt(ctrAcThr)
   $ctr_sink addThreshold      [$phy_sink2 Id_] [$phy_sink Id_] $opt(ctrOptThr)
 
-  # puts 
+  # puts
 }
 
 ##################
@@ -617,7 +617,7 @@ proc connectNodes {id1} {
   $cbr($id1) set destAddr_ [$ipif_sink addr]
   $cbr($id1) set destPort_ $portnum_sink($id1)
   $cbr_sink($id1) set destAddr_ [$ipif($id1) addr]
-  $cbr_sink($id1) set destPort_ $portnum($id1)  
+  $cbr_sink($id1) set destPort_ $portnum($id1)
   $ipr($id1) addRoute [$ipif_sink addr] [$ipif_sink addr]
   $ipr_sink  addRoute [$ipif($id1) addr] [$ipif($id1) addr]
 }
@@ -658,25 +658,25 @@ for {set id1 0} {$id1 < $opt(nn)} {incr id1}  {
 for {set id1 0} {$id1 < $opt(nn)} {incr id1}  {
   for {set id2 0} {$id2 < $opt(nn)} {incr id2}  {
   	$mll($id1) addentry [$ipif($id2) addr] [$mac($id2) addr]
-  }   
+  }
   $mll($id1) addentry [$ipif_sink addr] [ $mac_sink addr]
   $mll_sink addentry [$ipif($id1) addr] [ $mac($id1) addr]
 }
 
-# proc printPos {} {
-#   global position_sink
-#   set x_pos [$position_sink getX_]
-#   set y_pos [$position_sink getY_]
-#   set z_pos [$position_sink getZ_]
-#   puts -nonewline " Position = $x_pos $y_pos $z_pos"
-# }
 proc printPos {} {
   global position_sink
-  set lat [$position_sink getLatitude_]
-  set lon [$position_sink getLongitude_]
-  set dpt [expr -1 * [$position_sink getAltitude_]]
-  puts -nonewline " Position = $lat $lon $dpt"
+  set x_pos [$position_sink getX_]
+  set y_pos [$position_sink getY_]
+  set z_pos [$position_sink getZ_]
+  puts -nonewline " Position = $x_pos $y_pos $z_pos"
 }
+# proc printPos {} {
+#   global position_sink 
+#   set lat [$position_sink getLatitude_]
+#   set lon [$position_sink getLongitude_]
+#   set dpt [expr -1 * [$position_sink getAltitude_]]
+#   puts -nonewline " Position = $lat $lon $dpt"
+# }
 
 set partial_tot_rx 0.0
 
@@ -743,11 +743,11 @@ proc finish { } {
 		set sum_cbr_sent_pkts [expr $sum_cbr_sent_pkts + $cbr_pkts]
 		set sum_cbr_rcv_pkts  [expr $sum_cbr_rcv_pkts + $cbr_rcv_pkts]
 		set sum_mac_sent_pkts [expr $sum_mac_sent_pkts + $mac_pkts]
-  }	
-  set mac_auv_rcv_pkts   [$mac_sink getDataPktsRx] 
+  }
+  set mac_auv_rcv_pkts   [$mac_sink getDataPktsRx]
   #set tot_time  	     [$mac_sink GetTotalReceivingTime]
-  
-  if {$opt(verbose)} {  
+
+  if {$opt(verbose)} {
     puts "---------------------------------------------------------------------"
     puts "Number of packets transmitted by CBR: [expr ($sum_cbr_sent_pkts)]"
     puts "Number of packets received by CBR: [expr ($sum_cbr_rcv_pkts)]"
@@ -775,7 +775,6 @@ proc finish { } {
 puts -nonewline "\nSimulating...\n"
 
 #$ns at [expr $opt(stoptime) + 345.0]  "$mac_sink stop_count_time"
-$ns at [expr $opt(stoptime) + 350.0]  "finish; $ns halt" 
+$ns at [expr $opt(stoptime) + 350.0]  "finish; $ns halt"
 
 $ns run
-    

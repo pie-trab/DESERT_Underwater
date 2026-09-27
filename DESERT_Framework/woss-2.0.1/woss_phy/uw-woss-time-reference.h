@@ -1,0 +1,58 @@
+/* WOSS - World Ocean Simulation System -
+ * 
+ * Copyright (C) 2009 2025 Federico Guerra
+ * and regents of the SIGNET lab, University of Padova
+ *
+ * Author: Federico Guerra - WOSS@guerra-tlc.com
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation;
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */ 
+
+
+/**
+ * @file   uw-woss-time-reference.h
+ * @author Federico Guerra
+ *
+ * \brief  Provides the interface for WossTimeReferenceTcl class 
+ *
+ * Provides the interface for WossTimeReferenceTcl class
+ */
+
+
+#ifndef UNDERWATER_WOSS_TIME_REFERENCE_H
+#define UNDERWATER_WOSS_TIME_REFERENCE_H
+
+
+#include <memory>
+#include <time-definitions.h>
+#include <tclcl.h>
+#include <scheduler.h>
+
+
+class WossTimeReference : public woss::TimeReference {
+
+  
+  public:
+  
+  virtual ~WossTimeReference() override = default;
+  
+  virtual double getTimeReference() const { return Scheduler::instance().clock(); }
+
+  virtual std::unique_ptr<woss::TimeReference> clone() const { return std::make_unique<WossTimeReference>(*this); }
+
+};
+
+class WossTimeReferenceTcl : public TclObject, public WossTimeReference { };
+
+#endif // UNDERWATER_WOSS_TIME_REFERENCE_H

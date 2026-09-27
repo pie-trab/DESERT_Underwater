@@ -1,0 +1,155 @@
+# WOSS - World Ocean Simulation System -
+# 
+# Copyright (C) 2009 2025 Federico Guerra 
+# and regents of the SIGNET lab, University of Padova
+# 
+# Author: Federico Guerra - WOSS@guerra-tlc.com
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation;
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
+AC_INIT([WOSS], [2.0.1], [woss@guerra-tlc.com])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
+
+AC_MSG_NOTICE([WOSS AC_PACKAGE_VERSION])
+
+AC_PROG_CXX
+AC_PROG_MAKE_SET
+AC_ENABLE_SHARED
+AC_DISABLE_STATIC
+LT_INIT
+
+AC_CONFIG_MACRO_DIRS([m4])
+
+AC_MSG_NOTICE([checking user options])
+
+AC_PATH_NS_ALLINONE([have_nsallinone=yes],[have_nsallinone=no])
+
+AC_ARG_WITH_NSMIRACLE
+AC_CHECK_NSMIRACLE([have_nsmiracle=yes],[have_nsmiracle=no])
+#if test x$have_nsmiracle != xyes ; then
+#  AC_MSG_ERROR([Could not find nsmiracle,
+#    is --with-nsmiracle set correctly?])
+#fi  
+
+AC_ARG_WITH_NETCDF
+AC_CHECK_NETCDF([have_netcdf=yes],[have_netcdf=no])
+#if test x$have_netcdf != xyes ; then
+#  AC_MSG_ERROR([Could not find netcdf,
+#    is --with-netcdf set correctly?])
+#fi  
+
+AC_ARG_WITH_NETCDF4
+AC_CHECK_NETCDF4([have_netcdf4=yes],[have_netcdf4=no])
+#if test x$have_netcdf4 != xyes ; then
+#  AC_MSG_ERROR([Could not find netcdf,
+#    is --with-netcdf4 set correctly?])
+#fi  
+
+#C++17 is mandatory
+AC_MSG_NOTICE([C++17 support is mandatory and it has been added])
+UW_WOSS_CXX_FLAGS="-std=c++17"
+
+UW_WOSS_CPPFLAGS="$UW_WOSS_CPPFLAGS "'-I$(top_srcdir)/woss/woss_def'
+UW_WOSS_CPPFLAGS="$UW_WOSS_CPPFLAGS "'-I$(top_srcdir)/woss/woss_db'
+UW_WOSS_WARN="$UW_WOSS_WARN "'-Wall -Werror'
+
+UW_WOSS_PHY_CPPFLAGS="$UW_WOSS_PHY_CPPFLAGS "'-I$(top_srcdir)/woss/woss_def'
+UW_WOSS_PHY_CPPFLAGS="$UW_WOSS_PHY_CPPFLAGS "'-I$(top_srcdir)/woss/woss_db'
+UW_WOSS_PHY_CPPFLAGS="$UW_WOSS_PHY_CPPFLAGS "'-I$(top_srcdir)/woss'
+UW_WOSS_PHY_WARN="$UW_WOSS_PHY_WARN "'-Wall -Werror -Wno-write-strings -Wno-overloaded-virtual'
+
+UW_WOSS_LDFLAGS='-L$(top_srcdir)/woss/woss_def'
+UW_WOSS_LDFLAGS="$UW_WOSS_LDFLAGS "'-L$(top_srcdir)/woss/woss_db'
+
+UW_WOSS_PHY_LDFLAGS="$UW_WOSS_PHY_LDFLAGS "'-L$(top_srcdir)/woss/woss_def'
+UW_WOSS_PHY_LDFLAGS="$UW_WOSS_PHY_LDFLAGS "'-L$(top_srcdir)/woss/woss_db'
+UW_WOSS_PHY_LDFLAGS="$UW_WOSS_PHY_LDFLAGS "'-L$(top_srcdir)/woss'
+
+UW_WOSS_PHY_LIBADD="$UW_WOSS_PHY_LIBADD -lWOSS"
+
+
+if test "$have_netcdf" == "yes"
+then
+  UW_WOSS_CPPFLAGS="$UW_WOSS_CPPFLAGS "'-DWOSS_NETCDF_SUPPORT'
+  UW_WOSS_PHY_CPPFLAGS="$UW_WOSS_PHY_CPPFLAGS "'-DWOSS_NETCDF_SUPPORT'
+  AC_MSG_NOTICE([NETCDF support will be built.])
+else
+  AC_MSG_NOTICE([NETCDF support will NOT be built.])
+fi
+
+if test "$have_netcdf4" == "yes"
+then
+  UW_WOSS_CPPFLAGS="$UW_WOSS_CPPFLAGS "'-DWOSS_NETCDF_SUPPORT -DWOSS_NETCDF4_SUPPORT'
+  UW_WOSS_PHY_CPPFLAGS="$UW_WOSS_PHY_CPPFLAGS "'-DWOSS_NETCDF_SUPPORT -DWOSS_NETCDF4_SUPPORT'
+  AC_MSG_NOTICE([NETCDF4 support will be built.])
+else
+  AC_MSG_NOTICE([NETCDF4 support will NOT be built.])
+fi
+
+if test "$have_nsallinone" == "yes"
+then
+  if test "$have_nsmiracle" == "yes"
+  then
+    UW_WOSS_CPPFLAGS="$UW_WOSS_CPPFLAGS "'-DWOSS_NS_MIRACLE_SUPPORT'
+    UW_WOSS_PHY_CPPFLAGS="$UW_WOSS_PHY_CPPFLAGS "'-DWOSS_NS_MIRACLE_SUPPORT'
+    AC_MSG_NOTICE([NS MIRACLE support will be built.])
+  else
+    AC_MSG_NOTICE([NS ALLINONE path is correct, but NS MIRACLE is NOT, NS MIRACLE support will NOT be built.])
+  fi
+else
+  AC_MSG_NOTICE([NS ALLINONE path is NOT correct, NS MIRACLE support will NOT be built.])
+fi
+
+AC_MSG_NOTICE([multi-thread support will be built.])
+
+UW_WOSS_CPPFLAGS="$UW_WOSS_CPPFLAGS "'-DWOSS_MULTITHREAD'
+UW_WOSS_PHY_CPPFLAGS="$UW_WOSS_PHY_CPPFLAGS "'-DWOSS_MULTITHREAD'
+
+
+AC_SUBST(UW_WOSS_CXX_FLAGS)
+
+AC_SUBST(UW_WOSS_CPPFLAGS)
+AC_SUBST(UW_WOSS_PHY_CPPFLAGS)
+AC_SUBST(UW_WOSS_WARN)
+AC_SUBST(UW_WOSS_PHY_WARN)
+
+AC_SUBST(UW_WOSS_LDFLAGS)
+AC_SUBST(UW_WOSS_PHY_LDFLAGS)
+
+AC_SUBST(UW_WOSS_LIBADD)
+AC_SUBST(UW_WOSS_PHY_LIBADD)
+
+AM_CONDITIONAL([NS_MIRACLE_BUILD], [test "x$have_nsmiracle" = xyes -a "x$have_nsallinone" = xyes])
+
+AM_CONDITIONAL([NETCDF_BUILD], [test "x$have_netcdf" = xyes -o "x$have_netcdf4" = xyes])
+
+AC_DEFINE(CPP_NAMESPACE,std)
+
+AC_MSG_NOTICE([generating header files and makefiles])
+
+AC_CONFIG_FILES([Makefile
+                            doc/Makefile
+                            doc/imgs/Makefile
+                            woss/woss_def/Makefile
+                            woss/woss_db/Makefile
+                            woss/Makefile
+                            m4/Makefile
+                            samples/Makefile
+                            woss_phy/Makefile
+                            woss_phy/tcl_hooks/Makefile
+                            tests/Makefile
+                            ])
+		
+AC_OUTPUT()
