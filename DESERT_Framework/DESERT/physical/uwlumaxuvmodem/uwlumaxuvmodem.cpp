@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Regents of the SIGNET lab, University of Padova.
+// Copyright (c) 2026 Regents of the SIGNET lab, University of Padova.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -62,7 +62,7 @@ UwLumaXUVModem::UwLumaXUVModem()
 
 	recv_conn->setUDP();
 	recv_conn->setMulticast();
-	// this set recv_conn in reception mode (server receives data)
+	// sets recv_conn in reception mode (server receives data)
 	recv_conn->setServer();
 
 	data_buffer.clear();
@@ -147,8 +147,8 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 			}
 		}
 		if (!strcmp(argv[1], "optical_speed")) {
-			if (std::stoi(argv[2]) == 1 && std::stoi(argv[2]) == 4 &&
-					std::stoi(argv[2]) == 6 && std::stoi(argv[2]) == 8 &&
+			if (std::stoi(argv[2]) == 1 || std::stoi(argv[2]) == 4 ||
+					std::stoi(argv[2]) == 6 || std::stoi(argv[2]) == 8 ||
 					std::stoi(argv[2]) == 10) {
 				configure("parameters", "optical_speed", argv[2]);
 				return TCL_OK;
@@ -230,7 +230,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 			}
 		}
 		if (!strcmp(argv[1], "autogain_speed")) {
-			if (std::stoi(argv[2]) >= 0 || std::stoi(argv[2]) <= 2) {
+			if (std::stoi(argv[2]) >= 0 && std::stoi(argv[2]) <= 2) {
 				configure("parameters", "autogain_speed", argv[2]);
 				return TCL_OK;
 			} else {
@@ -238,7 +238,7 @@ UwLumaXUVModem::command(int argc, const char *const *argv)
 			}
 		}
 		if (!strcmp(argv[1], "signal_filtering_type")) {
-			if (std::stoi(argv[2]) >= 0 || std::stoi(argv[2]) <= 3) {
+			if (std::stoi(argv[2]) >= 0 && std::stoi(argv[2]) <= 3) {
 				configure("parameters", "signal_filtering_type", argv[2]);
 				return TCL_OK;
 			} else {
@@ -393,7 +393,7 @@ UwLumaXUVModem::configure(
 							"' specified. Check the LumaXUV manual for more "
 							"informations.");
 			curl_easy_cleanup(curl);
-			return false; // Ritorna errore se il parametro non esiste
+			return false; // returns an error if parameter does not exist
 		}
 
 		// CHECK 2: Check if the parameter is already set to the desired value
@@ -413,9 +413,6 @@ UwLumaXUVModem::configure(
 		// 2. PERFORM POST REQUEST (If payload did not match)
 		// ---------------------------------------------------------
 		std::string json_data = "{\"" + param_name + "\":" + param_value + "}";
-		// printOnLog(UwModem::LogLevel::DEBUG,
-		// 		"UWLUMAXUVMODEM",
-		// 		"json_data: " + json_data);
 
 		// Reset the write function so we don't accidentally append the POST
 		// response to our GET string

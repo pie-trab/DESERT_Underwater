@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019 Regents of the SIGNET lab, University of Padova.
+// Copyright (c) 2026 Regents of the SIGNET lab, University of Padova.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,8 +33,8 @@
  * @brief Driver for the LumaX-UV, UW modem
  */
 
-#ifndef UWMODAMODEM_H
-#define UWMODAMODEM_H
+#ifndef UWLUMAXUVMODEMEM_H
+#define UWLUMAXUVMODEMEM_H
 
 #include "uwconnector.h"
 #include "uwmodem.h"
@@ -44,6 +44,13 @@
 #include <condition_variable>
 #include <thread>
 
+/**
+class UwLumaXUVModem
+ * This class implements the interface to the LumaXUV modem.
+ * It is derived from UwModem and implements the methods to send and receive
+ * data from the modem with UDP sockets. It also implements a method to
+ * configure the modem parameters via HTTP requests with curl.
+*/
 class UwLumaXUVModem : public UwModem
 {
 
@@ -84,7 +91,7 @@ public:
 	 * transmitted. Inherited from MPhy, in NS-MIRACLE, could be left empty if
 	 * no way exists to retrieve this information
 	 * @param p Packet pointer to the given packet being transmitted
-	 * @param modulation type represented by an integer
+	 * @return modulation type represented by an integer
 	 */
 	virtual int getModulationType(Packet *p);
 
@@ -101,7 +108,7 @@ public:
 	/**
 	 * Cross-Layer messages synchronous interpreter.
 	 *
-	 * @param ClMessage* an instance of ClMessage that represent the
+	 * @param m Instance of ClMessage that represents the
 	 * message received
 	 * @return <i>0</i> if successful.
 	 */
@@ -147,7 +154,7 @@ private:
 	void stop();
 
 	/**
-	 * Method that dispatch a thread dedicated to receiving data from the data
+	 * Method that dispatches a thread dedicated to receiving data from the data
 	 * connector
 	 */
 	void receivingData();
@@ -170,7 +177,8 @@ private:
 	 * @param param_name parameter to configure
 	 * @param param_value value to assign
 	 */
-	bool configure(std::string endpoint, std::string param_name, std::string param_value); // TODO
+	bool configure(std::string endpoint, std::string param_name,
+			std::string param_value); // TODO
 
 	/** Mutex associated with the state machine of the modem */
 	std::mutex status_m;
@@ -207,9 +215,6 @@ private:
 	 */
 	std::unique_ptr<UwSocket> recv_conn;
 
-
-	// static const int DATA_ADDRESS; /**< Port of the data channel */
-
 	/** Bytes buffer for the signaling channel (unparsed data) */
 	std::vector<char> signal_buffer;
 
@@ -234,7 +239,7 @@ private:
 	std::string modem_address;
 
 	/**
-	 * Local interface address, used to trasmit or receive data
+	 * Local interface address, used to transmit or receive data
 	 */
 	std::string data_address;
 
