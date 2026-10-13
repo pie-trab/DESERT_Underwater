@@ -376,7 +376,8 @@ UwMODAModem::receivingSignaling()
 		end_it = end_it + r_bytes;
 
 		rsp = parseSignaling(end_it);
-
+		// TODO fix socket connection
+		// maybe check r_bytes
 		while (receiving.load() && rsp == ModemResponse::UNDEFINED) {
 			r_bytes += signal_conn->readFromDevice(
 					&(*end_it), MAX_READ_BYTES - r_bytes);

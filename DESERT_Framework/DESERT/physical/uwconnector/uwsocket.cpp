@@ -340,8 +340,14 @@ UwSocket::readFromDevice(void *wpos, int maxlen)
 		if (socketfd == -1) {
 			return -1;
 		}
-
+		// TODO fix socket connection
+		// check if socket close it
 		int n_bytes = read(socketfd, wpos, maxlen);
+		if (n_bytes <= 0) {
+			close(socketfd);
+			socketfd = -1;
+			return -1;
+		}
 		return n_bytes;
 
 	} else { // UDP protocol
