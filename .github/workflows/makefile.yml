@@ -2,7 +2,7 @@ name: DESERT CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "lumaX-UV_driver" ]
     tags: [ "*" ]
   pull_request:
     branches: [ "master" ]
