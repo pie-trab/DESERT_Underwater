@@ -23,7 +23,7 @@
 # -------------------
 # Optional command-line arguments are:
 #
-#   ns multi_hop_optical_tdma_beampattern.tcl \
+#   ns multi_hop_optical_tdma.tcl \
 #       n_relays \
 #       cbr_period \
 #       packet_size \
@@ -41,8 +41,9 @@
 #
 # All other parameters, including the per-hop attenuation list, are changed
 # in the parameter section below.  Optical PHY sensitivity parameters can
-# also be overridden from the command line for automated sweeps.  This variant
-# uses the directional beam-pattern PHY and the repository optical LUTs.
+# also be overridden from the command line for automated sweeps.  The ordinary
+# optical PHY is intentionally
+# used here: it needs no WOSS, beam LUT, attenuation LUT, or noise LUT.
 #
 #
 
@@ -56,19 +57,6 @@ source "get-config.tcl"
 set config_filename "multi_hop_optical_tdma_opt.yaml"
 load-config $config_filename
 
-# The LUTs are the same family used by old/test_uwopticalbeampattern.tcl.
-# Paths are relative to this Optical directory when the example is run here.
-set opt(noise_lut_path)        "../../dbs/optical_noise/LUT.txt"
-set opt(attenuation_lut_path) "../../dbs/optical_attenuation/lut_532nm/lut_532nm_CTD025.csv"
-set opt(beam_lut_path)        "../../dbs/bluecomm/beam_pattern/beam5mbps.csv"
-set opt(max_range_lut_path)   "../../dbs/bluecomm/max_range/max_range5mbps.csv"
-
-# One orientation per physical role in the generated chain.  The beam model
-# uses inclination in the X-Z plane; these values keep each optical head
-# aligned with its incoming/outgoing path while retaining the Y-axis layout.
-set opt(inclination_rx)       -1.570796326794897
-set opt(inclination_tx)        1.570796326794897
-
 ################################
 # Optional command-line values  #
 ################################
@@ -80,7 +68,7 @@ set opt(inclination_tx)        1.570796326794897
 # empty Tcl argument when omitted, followed by optional optical PHY overrides.
 if {$argc > 0} {
     if {$argc < 7 || $argc > 14} {
-        puts "Usage: ns multi_hop_optical_tdma_beampattern.tcl n_relays cbr_period packet_size hop_length relay_gap depth stop_time ?rngstream? ?attenuation_scale? ?poisson_traffic? ?depths? ?optical_txpower? ?optical_acq_threshold_db? ?optical_theta?"
+        puts "Usage: ns multi_hop_optical_tdma.tcl n_relays cbr_period packet_size hop_length relay_gap depth stop_time ?rngstream? ?attenuation_scale? ?poisson_traffic? ?depths? ?optical_txpower? ?optical_acq_threshold_db? ?optical_theta?"
         exit 1
     }
     set opt(n_relays)    [lindex $argv 0]
@@ -149,8 +137,15 @@ proc attenuationForHop {hop} {
     if {$hop < $nvalues} {
         return [expr {[lindex $values $hop]*$opt(attenuation_scale)}]
     }
-    # Reusing the last value avoids an out-of-range error when the user adds
-    # more relay couples without extending the example list immediately.
+    # Missing entries repeat the generated chain pattern: odd hop indexes
+    # are the short relay-gap links and stay lossless, even ones are normal
+    # hops that reuse the last configured link value.  Reusing the last
+    # value for gap links too would model the internal relay connection as
+    # a real water path (c = 0.3 x scale per gap) and bias every sweep with
+    # three or more relay couples.
+    if {[expr {$hop % 2}] == 1} {
+        return 0.0
+    }
     return [expr {[lindex $values end]*$opt(attenuation_scale)}]
 }
 
@@ -166,8 +161,8 @@ if {$opt(auto_frame_duration) && $opt(frame_duration) < $opt(min_frame_duration)
 # DESERT library loading       #
 ################################
 
-# These modules provide the IP forwarding stack, directional optical
-# beam-pattern PHY, optical channel, and the native TDMA MAC.
+# These modules provide the IP forwarding stack, optical channel/PHY, and the
+# native TDMA MAC.  No WOSS or external lookup-table library is required.
 load libMiracle.so
 load libMiracleBasicMovement.so
 load libuwip.so
@@ -183,7 +178,6 @@ load libuwem_channel.so
 load libuwoptical_propagation.so
 load libuwoptical_channel.so
 load libuwoptical_phy.so
-load libuwopticalbeampattern.so
 
 ################################
 # Simulator and random streams #
@@ -227,16 +221,8 @@ Module/UW/CBR set debug_          $opt(debug)           ; # CBR diagnostic verbo
 
 # All nodes share the same slot schedule.  setSlotNumber is applied per
 # modem below, so no external TDMA schedule file is needed.
-
-# Frame duration must include one packet and its guard time in every slot.
-set opt(packet_time) [expr {8.0 * $opt(pktsize) / $opt(bitrate)}]
-set opt(min_frame_duration) [expr {$opt(nn) * ($opt(packet_time) + $opt(guard_time)) * 1.20}]
-if {$opt(auto_frame_duration) && $opt(frame_duration) < $opt(min_frame_duration)} {
-    set opt(frame_duration) $opt(min_frame_duration)
-}
 Module/UW/TDMA set frame_duration      $opt(frame_duration)      ; # duration of one complete TDMA frame in seconds. Every node
                                                                   # gets frame_duration/tot_slots seconds for its slot.
-# max_transmission time
 Module/UW/TDMA set guard_time          $opt(guard_time)          ; # silent safety interval between adjacent slots in seconds.
                                                                   # It reduces overlap caused by timing/propagation uncertainty.
 Module/UW/TDMA set tot_slots           $opt(nn)                  ; # number of slots in the frame. Here it equals the number of
@@ -256,19 +242,19 @@ Module/UW/TDMA set mac2phy_delay_      [expr 1.0e-9]              ; # simulated 
 
 # Optical PHY defaults.  Each node receives its own propagation object below
 # so attenuation_c can vary from hop to hop.
-Module/UW/UWOPTICALBEAMPATTERN set TxPower_                 $opt(txpower)         ; # optical transmitter power in watts in this DESERT model.
-Module/UW/UWOPTICALBEAMPATTERN set BitRate_                 $opt(bitrate)         ; # optical bit rate in bit/s. It determines packet transmission time.
-Module/UW/UWOPTICALBEAMPATTERN set AcquisitionThreshold_dB_ $opt(acq_threshold_db) ; # minimum received SNR, in dB, needed to lock onto
+Module/UW/OPTICAL/PHY set TxPower_                 $opt(txpower)         ; # optical transmitter power in watts in this DESERT model.
+Module/UW/OPTICAL/PHY set BitRate_                 $opt(bitrate)         ; # optical bit rate in bit/s. It determines packet transmission time.
+Module/UW/OPTICAL/PHY set AcquisitionThreshold_dB_ $opt(acq_threshold_db) ; # minimum received SNR, in dB, needed to lock onto
                                                                            # an incoming optical packet.
-Module/UW/UWOPTICALBEAMPATTERN set Id_                      $opt(id)              ; # photodiode dark current in amperes, contributing to receiver noise.
-Module/UW/UWOPTICALBEAMPATTERN set Il_                      $opt(il)              ; # fixed background photocurrent in amperes. Increase it to model more
+Module/UW/OPTICAL/PHY set Id_                      $opt(id)              ; # photodiode dark current in amperes, contributing to receiver noise.
+Module/UW/OPTICAL/PHY set Il_                      $opt(il)              ; # fixed background photocurrent in amperes. Increase it to model more
                                                                            # ambient light; it raises the receiver noise floor.
-Module/UW/UWOPTICALBEAMPATTERN set R_                       $opt(shunt_resistance) ; # receiver shunt resistance in ohms, used in the thermal-noise model.
-Module/UW/UWOPTICALBEAMPATTERN set S_                       $opt(sensitivity)      ; # photodiode sensitivity in A/W, converting received optical power into
+Module/UW/OPTICAL/PHY set R_                       $opt(shunt_resistance) ; # receiver shunt resistance in ohms, used in the thermal-noise model.
+Module/UW/OPTICAL/PHY set S_                       $opt(sensitivity)      ; # photodiode sensitivity in A/W, converting received optical power into
                                                                            # photocurrent.
-Module/UW/UWOPTICALBEAMPATTERN set T_                       $opt(temperature)      ; # receiver temperature in kelvin, used for the thermal-noise calculation.
-Module/UW/UWOPTICALBEAMPATTERN set Ar_                      $opt(rx_area)          ; # receiver photodiode area in square metres.
-Module/UW/UWOPTICALBEAMPATTERN set debug_                   $opt(debug)            ; # optical PHY diagnostic verbosity.
+Module/UW/OPTICAL/PHY set T_                       $opt(temperature)      ; # receiver temperature in kelvin, used for the thermal-noise calculation.
+Module/UW/OPTICAL/PHY set Ar_                      $opt(rx_area)          ; # receiver photodiode area in square metres.
+Module/UW/OPTICAL/PHY set debug_                   $opt(debug)            ; # optical PHY diagnostic verbosity.
 
 # One optical channel carries all modem PHYs.  The TDMA schedule prevents
 # simultaneous transmissions, while the MAC destination field discards
@@ -301,7 +287,7 @@ proc createOpticalNode {id} {
     set ipif($id) [new Module/UW/IP]
     set mll($id)  [new Module/UW/MLL]
     set mac($id)  [new Module/UW/TDMA]
-    set phy($id)  [new Module/UW/UWOPTICALBEAMPATTERN]
+    set phy($id)  [new Module/UW/OPTICAL/PHY]
 
     $node($id) addModule 6 $udp($id)  1 "UDP"
     $node($id) addModule 5 $ipr($id)  1 "IPR"
@@ -335,17 +321,8 @@ proc createOpticalNode {id} {
     } else {
         $propagation($id) setC [attenuationForHop [expr {$id - 1}]]
     }
-    # Use the CTD attenuation LUT when both endpoint depths are covered.
-    # The per-hop c_ value above remains the fallback outside the LUT range.
-    $propagation($id) setDirectional
-    $propagation($id) setLUTFileName $opt(attenuation_lut_path)
-    $propagation($id) setLUTSeparator ","
-    if {$opt(attenuation_scale) != 1.0} {
-        $propagation($id) setFixedC
-    } else {
-        $propagation($id) setLUT
-        $propagation($id) setVariableC
-    }
+    # $propagation($id) setOmnidirectional
+    $propagation($id) setFixedC
     $propagation($id) set debug_ $opt(debug)
     $phy($id) setPropagation $propagation($id)
 
@@ -356,38 +333,6 @@ proc createOpticalNode {id} {
     $interf_data($id) set debug_ $opt(debug)
     $phy($id) setInterference $interf_data($id)
     $phy($id) setSpectralMask $data_mask
-
-    # Load ambient-light noise, beam-pattern, and maximum-range LUTs on each
-    # PHY, as required by UWOPTICALBEAMPATTERN.
-    $phy($id) setLUTFileName $opt(noise_lut_path)
-    $phy($id) setLUTSeparator " "
-    $phy($id) setBeamPatternPath $opt(beam_lut_path)
-    $phy($id) setMaxRangePath $opt(max_range_lut_path)
-    $phy($id) useLUT
-    $phy($id) setVariableTemperature
-    # Select the X-Z inclination from the first non-horizontal link touching
-    # this head.  A downward hop uses -pi/2 for transmission and +pi/2 for
-    # reception; the signs reverse for an upward hop.  Horizontal relay gaps
-    # need no vertical correction, so the adjacent sloped hop supplies it.
-    set current_z [lindex $opt(depths) $id]
-    set inclination 0.0
-    if {$id < $opt(receiver_id)} {
-        set next_z [lindex $opt(depths) [expr {$id + 1}]]
-        if {$next_z != $current_z} {
-            set inclination [expr {$next_z < $current_z ? $opt(inclination_rx) : $opt(inclination_tx)}]
-        } elseif {$id > 0} {
-            set previous_z [lindex $opt(depths) [expr {$id - 1}]]
-            if {$previous_z != $current_z} {
-                set inclination [expr {$current_z < $previous_z ? $opt(inclination_tx) : $opt(inclination_rx)}]
-            }
-        }
-    } elseif {$id > 0} {
-        set previous_z [lindex $opt(depths) [expr {$id - 1}]]
-        if {$previous_z != $current_z} {
-            set inclination [expr {$current_z < $previous_z ? $opt(inclination_tx) : $opt(inclination_rx)}]
-        }
-    }
-    $phy($id) setInclinationAngle $inclination
 
     # IP and MAC addresses are unique and follow the physical path order.
     $ipif($id) addr [expr {$id + 1}]
@@ -403,17 +348,14 @@ proc createOpticalNode {id} {
         set y 0.0
     } elseif {$id == $opt(receiver_id)} {
         set y [expr {($opt(n_relays) + 1) * $opt(hop_length) + $opt(n_relays) * $opt(relay_gap)}]
-        puts "Receiver $y" 
     } elseif {[expr {$id % 2}] == 1} {
         # RX head of relay i.
         set i [expr {($id - 1) / 2}]
         set y [expr {($i + 1) * $opt(hop_length) + $i * $opt(relay_gap)}]
-        puts "Relay Receiver $y" 
     } else {
         # TX head of relay i.
         set i [expr {($id - 2) / 2}]
         set y [expr {($i + 1) * $opt(hop_length) + ($i + 1) * $opt(relay_gap)}]
-        puts "Relay Transmitter $y" 
     }
     $position($id) setY_ $y
     $position($id) setZ_ [lindex $opt(depths) $id]
@@ -527,7 +469,7 @@ proc finish {} {
 # Run the simulation           #
 ################################
 
-puts "Starting multi-hop optical TDMA simulation with LUT beam patterns"
+puts "Starting multi-hop optical TDMA simulation"
 puts "Path has $opt(n_hops) hops and $opt(n_relays) relay couples"
 $ns at [expr {$opt(stoptime) + $opt(frame_duration) + 1.0}] "finish; $ns halt"
 $ns run

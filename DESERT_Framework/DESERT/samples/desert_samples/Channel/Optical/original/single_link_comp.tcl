@@ -335,7 +335,7 @@ $ns at $opt(stoptime)  "$cbr($opt(sender_id),$opt(receiver_id)) stop"
 ################################
 
 proc finish {} {
-    global ns opt cbr
+    global ns opt cbr mac
 
     set sent [$cbr($opt(sender_id),$opt(receiver_id)) getsentpkts]
     set received [$cbr($opt(receiver_id),$opt(sender_id)) getrecvpkts]
@@ -352,6 +352,10 @@ proc finish {} {
         puts "throughput bps: $throughput"
         puts "forward trip time mean: [$cbr($opt(receiver_id),$opt(sender_id)) getftt] s"
         puts "forward trip time std: [$cbr($opt(receiver_id),$opt(sender_id)) getfttstd] s"
+        puts "per-hop MAC counters (sent received):"
+        for {set id 0} {$id < $opt(nn)} {incr id} {
+            puts "  modem $id: [$mac($id) get_sent_pkts] [$mac($id) get_recv_pkts]"
+        }
         puts "----------------------------------------"
     }
 

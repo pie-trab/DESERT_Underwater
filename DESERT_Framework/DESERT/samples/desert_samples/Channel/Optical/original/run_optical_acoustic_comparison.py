@@ -30,7 +30,7 @@ MAC_RE = re.compile(
 
 def parse_args() -> argparse.Namespace:
     optical_dir = Path(__file__).resolve().parent
-    repo_root = optical_dir.parents[5]
+    repo_root = optical_dir.parents[6]
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--environment", type=Path,
                         default=repo_root / "DESERT_buildCopy_LOCAL" / "environment")
@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--acoustic-simulation", type=Path,
                         default=optical_dir / "single_link_comp.tcl")
     parser.add_argument("--output-dir", type=Path,
-                        default=optical_dir / "optical_acoustic_comparison_results")
+                        default=optical_dir / "results" / "runner_output")
     parser.add_argument("--repetitions", type=int, default=3)
     return parser.parse_args()
 
