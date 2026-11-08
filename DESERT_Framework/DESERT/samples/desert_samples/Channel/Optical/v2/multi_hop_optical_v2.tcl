@@ -91,10 +91,10 @@ set opt(rx_area)            330.06e-6     ;# m^2: receiver aperture area
 set opt(tx_area)            36e-6         ;# m^2: transmitter aperture area
 
 # TDMA parameters.
-set opt(frame_duration)     0.1           ;# s: minimum frame; auto-extended
+set opt(frame_duration)     0.1           ;# s: replaced by derived frame
 set opt(auto_frame_duration) 1
-set opt(guard_time)         0.01          ;# s: inter-slot guard interval
-set opt(max_packet_per_slot) 2            ;# packets per modem per slot
+set opt(guard_time)         0.001         ;# s: common fixed TDMA guard
+set opt(max_packet_per_slot) 1            ;# packets per modem per slot
 set opt(queue_size)         32            ;# packets buffered per modem
 set opt(drop_old_)          0             ;# drop the newly arriving packet
 
@@ -154,22 +154,6 @@ set opt(nn)          [expr {$opt(n_relays) + 2}]
 set opt(sender_id)   0
 set opt(receiver_id) [expr {$opt(nn) - 1}]
 set opt(n_hops)      [expr {$opt(nn) - 1}]
-
-# TDMA frame sizing, same rule as the acoustic v2 baseline: every slot must
-# fit one payload packet plus guard time with a 20% scheduling margin.
-set opt(packet_time) [expr {8.0 * $opt(pktsize) / $opt(bitrate)}]
-set opt(min_frame_duration) [expr {$opt(nn) * ($opt(packet_time) + $opt(guard_time)) * 1.20}]
-if {$opt(auto_frame_duration) &&
-        $opt(frame_duration) < $opt(min_frame_duration)} {
-    set opt(frame_duration) $opt(min_frame_duration)
-}
-
-# Packets generated until stoptime must be able to reach the sink before
-# the MACs stop, accounting for the multi-hop TDMA pipeline latency (up to
-# one frame per hop plus queueing); the margin also keeps every residual
-# queue non-empty only when the traffic itself is saturated.
-set opt(sim_end) [expr {$opt(stoptime)
-    + ($opt(n_hops) + 2) * $opt(frame_duration) + 0.5}]
 
 ################################
 # DESERT library loading       #
@@ -376,6 +360,35 @@ proc createOpticalNode {id} {
 for {set id 0} {$id < $opt(nn)} {incr id} {
     createOpticalNode $id
 }
+
+set effective_phy_class [$phy(0) info class]
+set effective_channel_class [$channel info class]
+set effective_propagation_class [$propagation(1) info class]
+puts "EFFECTIVE optical: beam_mode=$opt(beam_mode) phy_class=$effective_phy_class channel_class=$effective_channel_class propagation_class=$effective_propagation_class bitrate=$opt(bitrate) txpower=$opt(txpower) acquisition_db=$opt(acq_threshold_db) theta=$opt(theta) attenuation_c=[expr {$opt(attenuation_c_default) * $opt(attenuation_scale)}] frame_duration=$opt(frame_duration) max_packet_per_slot=$opt(max_packet_per_slot)"
+
+# Derive one TDMA slot from the complete simulated protocol packet and the
+# worst-case one-hop optical propagation time.  The optical chain uses the
+# same fixed guard and one packet per slot as the acoustic baseline.
+set opt(cbr_header_bytes) [$cbr(0,1) getcbrheadersize]
+set opt(udp_header_bytes) [$udp(0) getudpheadersize]
+set opt(ip_header_bytes)  [$ipif(0) getipheadersize]
+set opt(header_bytes) [expr {$opt(cbr_header_bytes) +
+    $opt(udp_header_bytes) + $opt(ip_header_bytes)}]
+set opt(packet_bytes) [expr {$opt(pktsize) + $opt(header_bytes)}]
+set opt(airtime) [expr {8.0 * $opt(packet_bytes) / $opt(bitrate)}]
+set opt(packet_time) $opt(airtime)
+set opt(propagation_speed) 225000000.0
+set opt(propagation_delay) [expr {$opt(hop_length) /
+    $opt(propagation_speed)}]
+set opt(slot_duration) [expr {$opt(airtime) + $opt(propagation_delay) +
+    $opt(guard_time)}]
+set opt(frame_duration) [expr {$opt(nn) * $opt(slot_duration)}]
+for {set id 0} {$id < $opt(nn)} {incr id} {
+    $mac($id) set frame_duration $opt(frame_duration)
+}
+set opt(sim_end) [expr {$opt(stoptime)
+    + ($opt(n_hops) + 2) * $opt(frame_duration) + 0.5}]
+puts "TDMA timing: technology=optical modems=[expr {2 * $opt(n_hops)}] tdma_slots=$opt(nn) hop_count=$opt(n_hops) header_bytes=$opt(header_bytes) packet_bytes=$opt(packet_bytes) airtime_s=$opt(airtime) propagation_s=$opt(propagation_delay) guard_s=$opt(guard_time) slot_s=$opt(slot_duration) frame_s=$opt(frame_duration)"
 
 ################################
 # Configure CBR and addresses  #

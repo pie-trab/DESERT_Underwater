@@ -141,6 +141,7 @@ RECEIVED_RE = re.compile(r"^received_packets:\s*([0-9]+)$", re.MULTILINE)
 FTT_RE = re.compile(r"^ftt_mean_s:\s*([-+0-9.eE]+)$", re.MULTILINE)
 FTT_STD_RE = re.compile(r"^ftt_std_s:\s*([-+0-9.eE]+)$", re.MULTILINE)
 CBR_THR_RE = re.compile(r"^cbr_thr_bps:\s*([-+0-9.eE]+)$", re.MULTILINE)
+TIMING_RE = re.compile(r"^TDMA timing:\s*(.*)$", re.MULTILINE)
 NODE_RE = re.compile(
     r"^\s*node (\d+): mac_tx=(\d+)\s+"
     r"mac_rx=(\d+)\s+up_rx=(\d+)\s+q_final=([0-9]+)\s*$", re.MULTILINE)
@@ -200,6 +201,16 @@ def run_case(technology: str, case: dict, log_path: Path) -> dict:
 
     match = lambda regex: (lambda m: float(m.group(1)) if m else math.nan)(
         regex.search(output))
+    timing_match = TIMING_RE.search(output)
+    timing = {}
+    if timing_match:
+        for token in timing_match.group(1).split():
+            if "=" in token:
+                key, value = token.split("=", 1)
+                try:
+                    timing[key] = float(value)
+                except ValueError:
+                    timing[key] = value
     sent = match(SENT_RE)
     received = match(RECEIVED_RE)
     if math.isnan(sent) or math.isnan(received):
@@ -236,6 +247,11 @@ def run_case(technology: str, case: dict, log_path: Path) -> dict:
     sink_mac_rx = tx_by_node.get(hop_count, (0, 0, 0, 0))[1]
     censored = sent > 65535
     delivered = sink_mac_rx
+    delay_mean = match(FTT_RE)
+    delay_std = match(FTT_STD_RE)
+    if delivered <= 0:
+        delay_mean = math.nan
+        delay_std = math.nan
 
     # Power is NOT simulated (see module docstring): TX energy counts
     # actual PHY transmissions per node; RX energy counts delivered
@@ -286,8 +302,8 @@ def run_case(technology: str, case: dict, log_path: Path) -> dict:
         "goodput_bps": (delivered_bits
                         / max(1e-9, case["stop_time"] - case["start_time"])),
         "cbr_thr_bps": match(CBR_THR_RE),
-        "delay_mean_s": match(FTT_RE),
-        "delay_std_s": match(FTT_STD_RE),
+        "delay_mean_s": delay_mean,
+        "delay_std_s": delay_std,
         "mean_edge_pdr": statistics.mean(finite_edges)
             if finite_edges else math.nan,
         "weakest_edge_pdr": (min(finite_edges)
@@ -305,6 +321,15 @@ def run_case(technology: str, case: dict, log_path: Path) -> dict:
         "energy_per_bit_uj": ((tx_energy_j + rx_energy_j) / delivered_bits * 1e6
                               if delivered_bits > 0 else math.nan),
         "packet_time_s": packet_time,
+        "timing_header_bytes": timing.get("header_bytes", math.nan),
+        "timing_packet_bytes": timing.get("packet_bytes", math.nan),
+        "timing_airtime_s": timing.get("airtime_s", math.nan),
+        "timing_propagation_s": timing.get("propagation_s", math.nan),
+        "timing_guard_s": timing.get("guard_s", math.nan),
+        "timing_slot_s": timing.get("slot_s", math.nan),
+        "timing_frame_s": timing.get("frame_s", math.nan),
+        "timing_tdma_slots": timing.get("tdma_slots", math.nan),
+        "timing_modems": timing.get("modems", math.nan),
     }
 
 

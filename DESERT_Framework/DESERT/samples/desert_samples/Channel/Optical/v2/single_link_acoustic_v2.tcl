@@ -82,7 +82,7 @@ set opt(shipping)           1         ;# shipping activity used by propagation
 
 # TDMA timing.  Same auto-expansion rule as the v2 optical chain.
 set opt(frame_duration)     0.1       ;# s: base frame (auto-expanded below)
-set opt(guard_time)         0.01      ;# s: guard time around a slot
+set opt(guard_time)         0.001     ;# s: common fixed TDMA guard
 set opt(auto_frame_duration) 1
 set opt(queue_size)         64        ;# packets buffered by the sender MAC
 set opt(max_packet_per_slot) 1        ;# packets sent by one modem per slot
@@ -112,20 +112,6 @@ if {$argc > 0} {
     set opt(rngstream)       [lindex $argv 6]
     set opt(poisson_traffic) [lindex $argv 7]
 }
-
-# A packet must fit in one assigned slot.  The extra 20% margin covers
-# MAC/PHY headers and simulator event ordering.  Two modems share the frame.
-set opt(packet_time) [expr {8.0 * $opt(pktsize) / $opt(bitrate)}]
-set opt(min_frame_duration) [expr {1.0 * ($opt(packet_time) + $opt(guard_time)) * 1.20}]
-if {$opt(auto_frame_duration) &&
-        $opt(frame_duration) < $opt(min_frame_duration)} {
-    set opt(frame_duration) $opt(min_frame_duration)
-}
-
-# The run is repeated exactly once per RNG substream, so every repetition is
-# an independent sample of the same setup.
-set opt(sim_end) [expr {$opt(stoptime)
-    + 3.0 * $opt(frame_duration) + 0.5}]
 
 ################################
 # DESERT library loading       #
@@ -286,6 +272,31 @@ proc createAcousticNode {id} {
 for {set id 0} {$id < $opt(nn)} {incr id} {
     createAcousticNode $id
 }
+
+puts "EFFECTIVE acoustic: phy_class=[$phy(0) info class] channel_class=[$channel info class] propagation_class=[$propagation info class] bitrate=$opt(bitrate) acquisition_db=$opt(acquisition_db) max_tx_range=$opt(max_tx_range) frame_duration=$opt(frame_duration) max_packet_per_slot=$opt(max_packet_per_slot)"
+
+# Derive one TDMA slot from the complete simulated protocol packet and the
+# worst-case one-hop acoustic propagation time.  CBR/UDP/IP headers are queried
+# from the loaded DESERT modules rather than hand-tuned constants.
+set opt(cbr_header_bytes) [$cbr(0,1) getcbrheadersize]
+set opt(udp_header_bytes) [$udp(0) getudpheadersize]
+set opt(ip_header_bytes)  [$ipif(0) getipheadersize]
+set opt(header_bytes) [expr {$opt(cbr_header_bytes) +
+    $opt(udp_header_bytes) + $opt(ip_header_bytes)}]
+set opt(packet_bytes) [expr {$opt(pktsize) + $opt(header_bytes)}]
+set opt(airtime) [expr {8.0 * $opt(packet_bytes) / $opt(bitrate)}]
+set opt(packet_time) $opt(airtime)
+set opt(propagation_delay) [expr {$opt(distance) /
+    $opt(propagation_speed)}]
+set opt(slot_duration) [expr {$opt(airtime) + $opt(propagation_delay) +
+    $opt(guard_time)}]
+set opt(frame_duration) [expr {$opt(nn) * $opt(slot_duration)}]
+for {set id 0} {$id < $opt(nn)} {incr id} {
+    $mac($id) set frame_duration $opt(frame_duration)
+}
+set opt(sim_end) [expr {$opt(stoptime) +
+    3.0 * $opt(frame_duration) + 0.5}]
+puts "TDMA timing: technology=acoustic modems=2 tdma_slots=$opt(nn) hop_count=1 header_bytes=$opt(header_bytes) packet_bytes=$opt(packet_bytes) airtime_s=$opt(airtime) propagation_s=$opt(propagation_delay) guard_s=$opt(guard_time) slot_s=$opt(slot_duration) frame_s=$opt(frame_duration)"
 
 ################################
 # Addresses, ports and routes  #
