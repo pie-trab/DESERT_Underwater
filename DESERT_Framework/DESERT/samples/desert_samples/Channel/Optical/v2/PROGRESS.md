@@ -1,10 +1,10 @@
-# Milestone 2 progress
+# Milestone 3 progress
 
 ## Status
 
 Part A schedule verification passed using only `results_m1`; no files under
 `results_m1/`, `results_current_baseline/` or `focused_results/` were
-modified. New outputs belong under `results_m2/`.
+modified. New outputs belong under `results_m3/`.
 
 ## Part A decisions
 
@@ -58,3 +58,26 @@ turbidity grid, delay/energy regime maps, hardware/hop plots and energy
 sensitivity/crossover table. No C++ changes were needed and there is no open
 blocker. A future milestone may address acoustic multihop controls and
 calibrated optical alignment/energy, but milestone 3 was not started.
+
+## Milestone 3 final status
+
+Milestone 3 is complete and is the final experimental milestone.
+
+- Added the acoustic equal-hop chain (`acoustic_chain_v3.tcl`), ran a 12-run
+  pilot and a 60-run main grid (10 seeds, 100 s each), zero failures and zero
+  conservation residuals.
+- `checks/milestone3.sh` prints PASS, including the M1 and M2 regression
+  checks.
+- Frozen the paper parameter set and generated all paper assets under
+  `results_m3/paper/`: distance comparison, regime maps, hop/hardware plot,
+  energy sensitivity, parameter table, main results and claims/caveats.
+- Corrected hardware accounting to unique modems (`hops + 1`): at 1000 m,
+  optical is 51 modems, not the legacy 100 link endpoints.
+- Key final values at 1000 m: direct acoustic 1.110 s and 1303.5 uJ/bit;
+  acoustic equal-hop 8.842 s and 65960.6 uJ/bit with PDR 0.586; optical
+  scaled-hop 0.160 s and 648.6 uJ/bit with PDR 1.0.
+- The acoustic-chain PDR loss at 500/1000 m is localized to the first hop
+  while all downstream edges are 1.0 and queues are empty. It is reported as
+  a TDMA slot-boundary model artifact, not acoustic range loss.
+- No open blocker. No further simulations are needed; the next step is paper
+  writing/formatting only, not milestone 4.

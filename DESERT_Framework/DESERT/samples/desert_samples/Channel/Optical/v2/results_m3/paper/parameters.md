@@ -1,0 +1,28 @@
+# Frozen paper parameters
+
+```
+                     parameter   value              units                            note
+              acoustic_bitrate   20768              bit/s            UW/PHYSICAL BitRate_
+            acoustic_frequency   50000                 Hz                acoustic carrier
+            acoustic_bandwidth   26000                 Hz       acoustic signal bandwidth
+         acoustic_source_level     180 dB re 1 uPa at 1 m                    MaxTxSPL_dB_
+acoustic_acquisition_threshold       0                 dB     0 dB exposes BPSK PER curve
+            acoustic_spreading       2                  - practical spreading coefficient
+             acoustic_tx_power      20                  W    analytical energy assumption
+             acoustic_rx_power       4                  W    analytical energy assumption
+               optical_bitrate 1000000              bit/s         UW/OPTICAL/PHY BitRate_
+            optical_wavelength     395                 nm            frequency 7.59e14 Hz
+              optical_tx_power      10                  W             configured TxPower_
+              optical_rx_power     1.5                  W    analytical energy assumption
+ optical_acquisition_threshold      15                 dB        AcquisitionThreshold_dB_
+ optical_divergence_half_angle   0.524                rad                           theta
+                 clear_water_c     0.3                1/m             baseline water type
+       optical_hop_clear_water      20                  m        80% of measured 25 m max
+                    tdma_guard   0.001                  s              common fixed guard
+         tdma_packets_per_slot       1                  -               both technologies
+                       payload     125               byte             application payload
+                 traffic_model Poisson                  -               mean period 5.0 s
+               simulation_time     100                  s                       main runs
+                         seeds      10                  -       RNG substream repetitions
+                         depth     -10                  m         shared horizontal chain
+```

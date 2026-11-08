@@ -160,3 +160,31 @@ The explicit grids supplied by `focused_comparison.py` are:
   the joint power envelope has a 663 m crossover only in its optimistic
   acoustic/pessimistic optical extreme, while the distance-scaled acoustic
   TX sensitivity has no crossover and grows very large.
+
+## Milestone 3 choices and runs
+
+- The acoustic equal-hop control uses the same single-head relay chain and
+  the same TDMA derivation as the optical chain. It is an equal-topology
+  ablation, not an acoustic deployment recommendation.
+- Distances: 50, 100, 200, 500, 1000 and 1500 m. The acoustic chain uses the
+  same 20 m hop target as the c=0.3 optical chain, so both relay scenarios
+  have the same hop count and topology.
+- Traffic is frozen at 125 byte payload, Poisson mean period 5 s and 100 s
+  main runtime with 10 seeds. No physical parameter was tuned after seeing
+  the results.
+- The paper hardware count is corrected to unique modems (`hops + 1`), not
+  the legacy `2*hops` link-endpoint count. At 1000 m this changes the optical
+  figure from 100 to 51 modems.
+- Pilot: 12 runs, 2 seeds, 20 s, zero failures, maximum runtime 5.59 s.
+- Main: 60 runs, 10 seeds, 100 s, zero failures, maximum runtime 15.08 s.
+- `checks/milestone3.sh` passes after running the M1 and M2 checks.
+- Surprise: acoustic equal-hop PDR is 0.682 at 500 m and 0.586 at 1000 m,
+  but 1.0 at 1500 m. Source `mac_tx` equals all generated packets, all lost
+  packets are missing at the first hop, all downstream edge PDRs are 1.0 and
+  queue drops are zero. This is not a 20 m propagation loss. It is consistent
+  with a TDMA slot-boundary/forwarding artifact and is documented as a model
+  limitation in `M3_FINDINGS.md`; it must not be interpreted as acoustic
+  range behavior.
+- Paper assets are under `results_m3/paper/`; the freeze includes the
+  c=0.3 distance baseline, M2 turbidity maps, unique-modem counts and the
+  M2 energy sensitivity. No beam mode or misalignment study was added.
