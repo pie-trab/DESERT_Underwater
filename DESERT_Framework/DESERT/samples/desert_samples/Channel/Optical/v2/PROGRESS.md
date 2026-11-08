@@ -1,81 +1,60 @@
-# Milestone 1 progress
+# Milestone 2 progress
 
 ## Status
 
-Implementation is ready for the required pilot. The previous baseline and
-focused result directories are untouched. New milestone output will be under
-`results_m1/`.
+Part A schedule verification passed using only `results_m1`; no files under
+`results_m1/`, `results_current_baseline/` or `focused_results/` were
+modified. New outputs belong under `results_m2/`.
 
-## Decisions made
+## Part A decisions
 
-- Plain-optical target hop: 20 m. The earlier clear-water plain-optical cliff
-  lies between 20 and 26.667 m, so 20 m gives a documented margin while
-  keeping the distance-scaled chains finite.
-- Common fixed TDMA guard: 1 ms. It is small relative to the acoustic
-  propagation times in this distance range and is identical for both
-  technologies.
-- One packet per slot for both technologies. The slot is derived as full
-  payload plus queried CBR/UDP/IP header bytes divided by PHY rate, plus the
-  worst-case one-hop propagation delay and the 1 ms guard.
-- Low-load period: 5.0 s Poisson mean (0.2 packet/s). This is below the
-  derived acoustic service rate even for the 1500 m case, so goodput should
-  track offered load while delay remains measurable.
-- Optical relay count: `ceil(D / 20 m) - 1`; equal optical hops sum exactly to
-  D. The requested modem-count column is 2 for acoustic and 2*hops for
-  optical; the simulator still uses one node per relay as in v2.
+- PDR verification uses the existing 10-seed means and 95% CIs. The only
+  point below 0.95 is acoustic at 1500 m: 0.270 +/- 0.060. Its delay is the
+  mean over delivered packets and its energy/bit includes TX/RX events for
+  packets that were lost; neither value is treated as undefined because
+  delivery is nonzero.
+- At 1000 m, optical uses 50 hops, slot 2.128 ms and frame 108.533 ms. The
+  first-order schedule expectation is `50*slot + frame/2 = 160.671 ms`,
+  versus 160.230 ms measured. Acoustic uses one hop, slot 721.981 ms and
+  frame 1.443962 s. Its active-slot phase approximation is
+  `slot + frame/4 = 1.083 s`, versus 1.110 s measured. Both errors are below
+  10%; the schedule is like-for-like in its derivation and one-packet-slot
+  rule, although the topologies necessarily have different frame lengths.
 
-## Verification before pilot
+## Part B planned configurations
 
-- Timing smoke runs succeeded for one acoustic and one plain-optical case.
-  Header bytes were queried as 16 bytes, and both logs printed derived
-  airtime, propagation, slot and frame values.
-- No C++ or DESERT module source was changed. Existing CBR sequence-wrap and
-  optical LUT concerns remain known model limitations; the low-load plain
-  optical milestone avoids the wrap and does not use beam mode.
+- Calibration water coefficients: c = 0.1, 0.3, 0.5, 0.8 and 1.2 1/m.
+- Calibration pilot hop lengths: 2, 5, 10, 15, 18, 20, 22, 25, 30, 35,
+  40, 50, 60, 75 and 100 m; plain optical, single hop, 2 seeds, 20 s,
+  period 5 s, 125-byte packets. A hop is usable only if both pilot seeds
+  reach PDR >= 0.95. The largest usable tested hop is multiplied by 0.8.
+- Scaled-distance grid: c values above and D = 50, 100, 200, 500 and 1000 m.
+  Acoustic is simulated once per D and reused across c. Optical uses
+  `ceil(D / working_hop(c)) - 1` relays. Cases over 100 hops or below 2 m
+  working hop are recorded as INFEASIBLE and not simulated.
+- Part B uses the milestone-1 5 s Poisson period, 125-byte payload, 1 ms
+  common guard, one packet/slot and unchanged PHY powers/rates.
 
-## Pilot result
+## Part C decisions
 
-- Pilot completed with 32 rows (8 distances × 2 technologies × 2 seeds), zero
-  failures and zero conservation residuals.
-- Every requested distance was feasible. Maximum observed run time was 5.22 s
-  for the 20 s, 1500 m optical case; no distance was dropped or reduced.
-- Logs print both effective scenario classes and derived timing. The optical
-  node count grows from 4 at 50 m to 76 at 1500 m, while the requested modem
-  accounting grows from 6 to 150. Acoustic remains two nodes/two modems.
-- At 1000 m both scenarios delivered all pilot packets; at 1500 m acoustic
-  PDR degraded while plain optical remained lossless with 20 m hops. Pilot
-  goodput CIs are broad because a 20 s Poisson run contains few packets; the
-  10-seed/100-second main run is required for the paper values.
-
-## Main result
-
-- Main completed with 160 rows (8 distances × 2 technologies × 10 seeds),
-  zero failures, zero conservation residuals and maximum observed runtime
-  6.75 s. All requested distances were feasible; none was reduced or dropped.
-- `checks/milestone1.sh` prints:
-  `PASS: milestone 1 timing, relay scaling, NaN handling, and conservation`.
-- At 100 m, both PDRs are 100%; mean delay is 150 ms acoustic versus 14.9 ms
-  optical, and energy is 1156 versus 57.5 uJ/bit. At 1000 m, both remain at
-  100% PDR; mean delay is 1.11 s acoustic versus 160 ms optical, and energy is
-  1156 versus 575 uJ/bit.
-- At 1500 m the acoustic PDR is 27.0+/-6.0% and goodput 50+/-9.5 bit/s,
-  while optical remains at 100% and about 194 bit/s. This is not a free
-  optical win: the optical scenario uses 150 requested modems and 862.5
-  uJ/bit, while the acoustic scenario uses two modems and suffers the
-  configured acoustic PER/SNR losses.
-- Plots are in `results_m1/`: delay, goodput, energy/bit and hardware count
-  versus distance, with 95% CIs (zero-width CI for deterministic hardware
-  count). Undefined values are skipped and are never encoded as numeric zero.
-
-## Open blockers
-
-None for milestone 1. Known upstream/model issues remain documented in
-`FINDINGS.md` (CBR sequence wrap, beam-LUT calibration, analytical energy),
-but this milestone uses low load and plain optical only, so no C++ change was
-required.
+- Energy is recomputed from saved M1 TX/RX event counts and the full-packet
+  timing airtime printed by M1, not from the older payload-only energy field.
+- The power-band envelope scales all four assumed powers jointly by 0.5 and
+  1.5. This is an uncertainty envelope, not a new simulation.
+- Distance-scaled acoustic TX sensitivity uses the practical spreading
+  exponent 2 and Thorp absorption at the actual 50 kHz carrier:
+  `Ptx(D)=20 W*(D/50 m)^2*10^(alpha_Thorp*(D-50 m)/1000/10)`;
+  acoustic RX remains 4 W. The 50 m reference preserves the baseline power
+  at the shortest M1 distance. Thorp's standard absorption expression is
+  used with frequency in kHz (Thorp, 1967/Urick underwater acoustics model).
 
 ## Next step
 
-Milestone 2 should add an acoustic multihop control and/or a calibrated
-optical energy/misalignment model before making broader deployment claims.
-Do not start milestone 2 as part of this work.
+Milestone 2 is complete. `checks/milestone2.sh` prints PASS. The corrected
+main run used 50 acoustic and 220 optical simulations, all successful; the
+first duplicated grid pilot was discarded and is not part of the conclusions.
+Outputs include the PDR/schedule verification, calibrated hop table, scaled
+turbidity grid, delay/energy regime maps, hardware/hop plots and energy
+sensitivity/crossover table. No C++ changes were needed and there is no open
+blocker. A future milestone may address acoustic multihop controls and
+calibrated optical alignment/energy, but milestone 3 was not started.

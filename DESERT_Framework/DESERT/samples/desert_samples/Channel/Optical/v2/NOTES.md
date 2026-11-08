@@ -121,3 +121,42 @@ The explicit grids supplied by `focused_comparison.py` are:
   the optical result is maintained by the 20 m plain-optical hop target. The
   requested optical modem count grows linearly and is the main deployment
   cost. No C++ change was required for this milestone.
+
+## Milestone 2 choices
+
+- Part A uses verified copies of the M1 plots under `results_m2/part_a/` so
+  the protected M1 figures are not modified. The acoustic 1500 m point is
+  marked with an open marker because PDR is below 0.95; delay is conditional
+  on delivered packets and energy includes transmissions of lost packets.
+- Schedule expectations use the actual fair-mode TDMA behavior: optical's
+  sparse source slot contributes approximately half a frame of phase wait,
+  then one slot per hop; acoustic's source owns half of its two-slot frame,
+  giving the first-order `slot + frame/4` phase approximation. These are
+  checks against measured M1 means, not new fitted parameters.
+- The calibration grid and fixed 80% working-hop rule are recorded in
+  `PROGRESS.md` before any M2 simulations. The grid extends to 100 m to avoid
+  declaring a low-turbidity range from an artificially short upper bound.
+- M2 energy uses the full packet airtime from the saved TDMA timing fields.
+  This is intentionally different from the legacy payload-only energy field
+  and is reported as a recomputation, not a change to the simulator.
+- The first grid pilot exposed an output-runner bug: it iterated every row of
+  the calibration table instead of one selected working-hop row per c,
+  producing duplicated optical cases. Those results are not accepted. The
+  grid selector was corrected to `drop_duplicates('water_c')` before the
+  corrected pilot/main runs.
+
+## Milestone 2 completed runs
+
+- Part A used no simulations. Verified M1 plots/table are under
+  `results_m2/part_a/`; the schedule check passed within 10% for both
+  technologies.
+- Calibration pilot: 150 runs, 2 seeds, 20 s, zero failures. Selected max
+  usable hops are 50, 25, 15, 10 and 5 m for c=0.1, 0.3, 0.5, 0.8 and 1.2.
+- Corrected grid pilot: 54 simulations, 2 seeds, 20 s, zero failures.
+- Corrected main: 270 simulations (50 acoustic reused-distance runs plus 220
+  optical feasible runs), 10 seeds, 100 s, zero failures. Three optical cells
+  are INFEASIBLE because they exceed 100 hops.
+- `checks/milestone2.sh` passes. The baseline energy curve has no crossover;
+  the joint power envelope has a 663 m crossover only in its optimistic
+  acoustic/pessimistic optical extreme, while the distance-scaled acoustic
+  TX sensitivity has no crossover and grows very large.

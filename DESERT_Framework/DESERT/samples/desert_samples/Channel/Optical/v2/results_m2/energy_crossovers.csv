@@ -1,0 +1,5 @@
+case,crossover_distance_m,result
+baseline,,none in swept range
+band_acoustic_min_optical_max,663.3913249609632,interpolated
+band_acoustic_max_optical_min,,none in swept range
+scaled_acoustic,,none in swept range
