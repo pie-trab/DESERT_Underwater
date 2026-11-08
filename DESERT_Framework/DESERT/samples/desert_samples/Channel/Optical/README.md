@@ -1,9 +1,9 @@
 # Acoustic vs. multi-hop optical benchmark
 
 Two generations of the same study live here. `original/` is the first
-notebook-driven workflow; `v2/` is the redesigned, script-driven benchmark.
-They are kept separate on purpose: the models, the Tcl scripts and the
-outputs are not interchangeable.
+notebook-driven workflow; `v2/` is the consolidated, script-driven study.
+They are kept separate on purpose: the models, Tcl scripts and outputs are
+not interchangeable.
 
 ```
 Optical/
@@ -18,13 +18,11 @@ Optical/
 │   ├── archive/               superseded scripts and early snapshots
 │   ├── results/               generated data (git-excluded)
 │   └── reports/               local write-ups (git-excluded)
-└── v2/                        redesigned benchmark
-    ├── run_comparison_v2.py
-    ├── analyze_v2.py
-    ├── multi_hop_optical_v2.tcl
-    ├── single_link_acoustic_v2.tcl
-    ├── results/               generated data (13 MB, plots tracked)
-    └── reports/               local write-up (git-excluded)
+└── v2/                        consolidated benchmark
+    ├── simulation/            one runner, scenarios, data, check
+    ├── paper/                 Typst manuscript, figures, tables
+    ├── docs/EXPERIMENT.md     method, results, limitations
+    └── README.md
 ```
 
 ## original/
@@ -55,27 +53,32 @@ their original working-directory assumptions and are kept only as history.
 
 ## v2/
 
+`v2/` is the consolidated study. It contains one simulation entry point,
+three scenario scripts, committed derived data and the Typst paper.
+
 ```console
 $ source <install-dir>/environment
 $ cd v2
-$ python3 run_comparison_v2.py                 # full 2 610-run grid -> results/
-$ python3 run_comparison_v2.py --quick         # 87-run smoke test
-$ python3 analyze_v2.py                        # consistency checks + tables
+
+$ python3 simulation/run.py distance --phase main
+$ python3 simulation/run.py turbidity --stage calibrate
+$ python3 simulation/run.py turbidity --stage main
+$ python3 simulation/run.py diagnostic --phase main
+$ python3 simulation/run.py energy
+$ python3 simulation/run.py paper
+$ simulation/check.sh
 ```
 
-`v2/results/` holds the revised dataset (Rev. 2, 3 330 runs: 111 sweep
-points × 3 technologies × 30 RNG substreams — the distance sweep now reaches
-1 600 m and the acoustic PHY uses a 0 dB acquisition threshold), plus
-summary, per-run logs and the five `v2_*.png` figures. The earlier
-generations are archived untouched:
-`results_cbr0.25/` (original 2 610-run dataset, 15 dB acoustic threshold)
-and `results_cbr0.05/` (stress experiment with base CBR period 0.05 s).
+Pilot runs use `--phase pilot` or `--stage pilot`. Derived data are in
+`simulation/data/final/`; raw logs go to `simulation/data/raw/` and are not
+committed. The final paper is in `paper/` and is written in Typst. See
+`docs/EXPERIMENT.md` for parameters, results and limitations.
 
 ## Notes
 
-- The `.md` reports under `original/reports/` and `v2/reports/` are
-  deliberately excluded in `.git/info/exclude` and are never pushed.
-- Everything below `original/results/` is excluded as well; the tracked
-  PNG sets there were committed before the reorganization.
+- The `.md` reports under `original/reports/` are deliberately excluded in
+  `.git/info/exclude` and are never pushed.
+- Everything below `original/results/` is excluded as well; the tracked PNG
+  sets there were committed before the reorganization.
 - The two Tcl generations expect different argument lists and different
   metrics blocks. Do not mix their runners and scripts.
