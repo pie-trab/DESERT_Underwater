@@ -98,3 +98,20 @@ Milestone 4 is complete and is the final paper-freeze milestone.
 - `checks/milestone4.sh` prints PASS after the M1--M3 regression checks.
 - No open blocker. No M5 is needed; remaining work is manuscript writing and
   formatting.
+
+## Milestone 5 final status
+
+Milestone 5 is complete and is the **final milestone**; no M6 is planned.
+
+- Wrote the manuscript in Typst under `results_m5/manuscript/`:
+  `abstract.typ` (185 words), `paper.typ` (2,533 words excluding the included
+  abstract), `abstract_claims.csv`, and `REPRODUCE.typ`.
+- Added `M5_FINDINGS.typ` and `checks/milestone5.sh`.
+- The headline claims use direct acoustic vs optical scaled-hop only.
+  The acoustic equal-hop chain remains diagnostic-only with an unresolved
+  first-hop simulation artifact.
+- Abstract numeric claims are machine-checked against
+  `results_m4/paper/main_results.csv` and `parameters.csv`.
+- All M1--M5 checks pass. Remaining author input is limited to verified
+  bibliography entries, author/affiliation details and target-venue
+  formatting.
