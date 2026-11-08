@@ -188,3 +188,19 @@ The explicit grids supplied by `focused_comparison.py` are:
 - Paper assets are under `results_m3/paper/`; the freeze includes the
   c=0.3 distance baseline, M2 turbidity maps, unique-modem counts and the
   M2 energy sensitivity. No beam mode or misalignment study was added.
+
+## Milestone 4 choices
+
+- M4 is output-only; no new benchmark simulations and no physical parameter
+  changes.
+- The acoustic equal-hop PDR is quarantined as diagnostic-only. The saved
+  counters localize loss to the first hop and rule out acoustic range loss,
+  but do not prove the exact simulator mechanism. Final paper wording is
+  therefore "first-hop simulation artifact; mechanism unresolved."
+- The headline comparison is restricted to direct acoustic vs optical
+  scaled-hop. The acoustic chain appears only in a separate diagnostic
+  figure and table.
+- Hardware counts in the final paper use unique modems (`hops + 1`). The M1/M2
+  `2*hops` value remains documented as a link-endpoint convention.
+- Final assets are under `results_m4/paper/`; `REPRODUCE.md` lists the full
+  command sequence and `checks/milestone4.sh` verifies the package.

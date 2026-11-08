@@ -81,3 +81,20 @@ Milestone 3 is complete and is the final experimental milestone.
   a TDMA slot-boundary model artifact, not acoustic range loss.
 - No open blocker. No further simulations are needed; the next step is paper
   writing/formatting only, not milestone 4.
+
+## Milestone 4 final status
+
+Milestone 4 is complete and is the final paper-freeze milestone.
+
+- Split the headline package (direct acoustic vs optical scaled-hop) from
+  the acoustic-chain diagnostic package.
+- The acoustic-chain PDR is excluded from headline claims and marked
+  diagnostic-only while its exact first-hop mechanism remains unresolved.
+- Final assets are under `results_m4/paper/`: main distance figure, separate
+  chain diagnostic figure, regime maps, hop/hardware plot, energy sensitivity,
+  split result tables, frozen parameters, paper summary and claims.
+- Added `results_m4/REPRODUCE.md` and `checks/milestone4.sh`.
+- Hardware accounting in the final package uses unique modems (`hops + 1`).
+- `checks/milestone4.sh` prints PASS after the M1--M3 regression checks.
+- No open blocker. No M5 is needed; remaining work is manuscript writing and
+  formatting.

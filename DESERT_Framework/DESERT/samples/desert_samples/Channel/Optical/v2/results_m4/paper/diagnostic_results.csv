@@ -1,0 +1,7 @@
+technology,distance_m,repetitions,hop_count,unique_modems,link_endpoint_modems,pdr_mean,pdr_ci95,delay_mean_s_mean,delay_mean_s_ci95,energy_per_bit_uj_mean,energy_per_bit_uj_ci95,pdr_below_095,series_role,artifact_note
+acoustic_chain,50.0,10,3,4,6,1.0,0.0,0.2729361,0.0152189918044162,3910.631741140212,3.42879502568394e-13,False,diagnostic_only,PDR losses localize to the first hop; mechanism unresolved
+acoustic_chain,100.0,10,5,6,10,1.0,0.0,0.4941447,0.0247577826453893,6517.7195685670185,6.505681146610073e-13,False,diagnostic_only,PDR losses localize to the first hop; mechanism unresolved
+acoustic_chain,200.0,10,10,11,20,1.0,0.0,1.0949798,0.062314052830644,13035.439137134035,1.3715180102735758e-12,False,diagnostic_only,PDR losses localize to the first hop; mechanism unresolved
+acoustic_chain,500.0,10,25,26,50,0.6819739329298153,0.0285687969546284,2.8403523,0.1476242890126173,33100.07249880241,66.6824668832453,True,diagnostic_only,PDR losses localize to the first hop; mechanism unresolved
+acoustic_chain,1000.0,10,50,51,100,0.5863851703851704,0.0443365923240852,8.8415179,2.198612051192458,65960.55554614871,130.14815832676888,True,diagnostic_only,PDR losses localize to the first hop; mechanism unresolved
+acoustic_chain,1500.0,10,75,76,150,1.0,0.0,18.836550000000003,6.27134948965616,97765.79352850528,1.0409089834576116e-11,False,diagnostic_only,PDR losses localize to the first hop; mechanism unresolved
