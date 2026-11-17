@@ -41,8 +41,15 @@ BASE = {
     "optical_threshold": 15.0,
     "optical_theta": 0.524,
 }
-BITRATE = {"acoustic": 20768.0, "optical": 1.0e6,
-           "acoustic_chain": 20768.0}
+ACOUSTIC_BASE = {
+    "acoustic_freq": 26000.0,
+    "acoustic_bw": 16000.0,
+    "acoustic_bitrate": 2500.0,
+    "acoustic_txpower": 175.0,
+    "acoustic_spreading": 1.75,
+}
+BITRATE = {"acoustic": 2500.0, "optical": 1.0e6,
+           "acoustic_chain": 2500.0}
 POWER = {"acoustic": (20.0, 4.0), "optical": (10.0, 1.5),
          "acoustic_chain": (20.0, 4.0)}
 
@@ -104,17 +111,31 @@ def build_args(technology: str, case: dict) -> list:
     poisson = case["poisson_traffic"]
     if technology == "acoustic":
         return [0, cbr, packet, case["total_distance"], depth, stop,
-                rng, poisson]
+                rng, poisson, case.get("windspeed", 10.0),
+                case.get("acoustic_freq", ACOUSTIC_BASE["acoustic_freq"]),
+                case.get("acoustic_bw", ACOUSTIC_BASE["acoustic_bw"]),
+                case.get("acoustic_bitrate", ACOUSTIC_BASE["acoustic_bitrate"]),
+                case.get("acoustic_txpower", ACOUSTIC_BASE["acoustic_txpower"]),
+                case.get("acoustic_spreading",
+                         ACOUSTIC_BASE["acoustic_spreading"])]
     if technology == "acoustic_chain":
         return [case["n_relays"], cbr, packet, case["total_distance"],
-                depth, stop, rng, poisson]
+                depth, stop, rng, poisson, case.get("windspeed", 10.0),
+                case.get("acoustic_freq", ACOUSTIC_BASE["acoustic_freq"]),
+                case.get("acoustic_bw", ACOUSTIC_BASE["acoustic_bw"]),
+                case.get("acoustic_bitrate", ACOUSTIC_BASE["acoustic_bitrate"]),
+                case.get("acoustic_txpower", ACOUSTIC_BASE["acoustic_txpower"]),
+                case.get("acoustic_spreading",
+                         ACOUSTIC_BASE["acoustic_spreading"])]
     if technology == "optical":
         return [
             case["n_relays"], cbr, packet, case["hop_length"], depth, stop,
             rng, poisson, case.get("attenuation_scale", 1.0),
             case.get("optical_txpower", 10.0),
             case.get("optical_threshold", 15.0),
-            case.get("optical_theta", 0.524), 0,
+            case.get("optical_theta", 0.524), case.get("beam_mode", 0),
+            case.get("optical_il", 1.0e-6),
+            case.get("optical_guard", 0.001),
         ]
     raise ValueError(f"unknown technology: {technology}")
 
@@ -202,6 +223,26 @@ def run_case(technology: str, case: dict, log_path: Path) -> dict:
                        if technology == "optical" else
                        case["total_distance"] / hop_count),
         "water_c": case.get("water_c", math.nan),
+        "windspeed": case.get("windspeed", math.nan),
+        "beam_mode": case.get("beam_mode", math.nan),
+        "optical_il": (case.get("optical_il", 1.0e-6)
+                       if technology == "optical" else math.nan),
+        "optical_guard": (case.get("optical_guard", 0.001)
+                          if technology == "optical" else math.nan),
+        "acoustic_freq": (case.get("acoustic_freq",
+                                   ACOUSTIC_BASE["acoustic_freq"])
+                          if technology in ("acoustic", "acoustic_chain") else math.nan),
+        "acoustic_bw": (case.get("acoustic_bw", ACOUSTIC_BASE["acoustic_bw"])
+                        if technology in ("acoustic", "acoustic_chain") else math.nan),
+        "acoustic_bitrate": (case.get("acoustic_bitrate",
+                                      ACOUSTIC_BASE["acoustic_bitrate"])
+                             if technology in ("acoustic", "acoustic_chain") else math.nan),
+        "acoustic_txpower": (case.get("acoustic_txpower",
+                                      ACOUSTIC_BASE["acoustic_txpower"])
+                             if technology in ("acoustic", "acoustic_chain") else math.nan),
+        "acoustic_spreading": (case.get("acoustic_spreading",
+                                        ACOUSTIC_BASE["acoustic_spreading"])
+                               if technology in ("acoustic", "acoustic_chain") else math.nan),
         "cbr_period": case["cbr_period"],
         "packet_size": case["packet_size"],
         "sent_packets": sent,
@@ -247,9 +288,29 @@ def execute_cases(cases: list[dict], out_dir: Path, filename: str) -> pd.DataFra
     def execute(job):
         index, case = job
         technology = case["technology"]
+        wind = case.get("windspeed", math.nan)
+        wind_label = f"_W{wind:g}" if math.isfinite(wind) else ""
+        beam = case.get("beam_mode", math.nan)
+        beam_label = f"_B{beam:g}" if math.isfinite(beam) else ""
+        acoustic_label = ""
+        if "acoustic_freq" in case:
+            acoustic_label = (
+                f"_F{case.get('acoustic_freq', 0):g}"
+                f"_S{case.get('acoustic_spreading', 0):g}"
+                f"_R{case.get('acoustic_bitrate', 0):g}")
+        optical_label = ""
+        if "optical_il" in case:
+            optical_label += f"_I{case.get('optical_il', 0):g}"
+        if "optical_guard" in case:
+            optical_label += f"_G{case.get('optical_guard', 0):g}"
+        period = case.get("cbr_period", 5.0)
+        period_label = f"_P{period:g}" if period != 5.0 else ""
+        tag = case.get("tag", "")
+        tag_label = f"_{tag}" if tag else ""
         label = (f"{technology}_D{case['total_distance']:g}"
                  f"_C{case.get('water_c', 0):g}"
-                 f"_R{case['rngstream']:02d}")
+                 f"{wind_label}{beam_label}{acoustic_label}{optical_label}"
+                 f"{period_label}{tag_label}_R{case['rngstream']:02d}")
         log_path = log_dir / f"{index:05d}_{label}.log"
         started = time.monotonic()
         try:
@@ -271,6 +332,8 @@ def execute_cases(cases: list[dict], out_dir: Path, filename: str) -> pd.DataFra
                 "total_distance": case["total_distance"],
                 "hop_length": case.get("hop_length", math.nan),
                 "water_c": case.get("water_c", math.nan),
+                "windspeed": case.get("windspeed", math.nan),
+                "beam_mode": case.get("beam_mode", math.nan),
                 "rngstream": case["rngstream"],
                 "unique_modems": 2 if technology == "acoustic"
                 else case["n_relays"] + 2,
@@ -313,9 +376,17 @@ def summarize(raw: pd.DataFrame) -> pd.DataFrame:
                                                math.nan)
     metrics = ["pdr", "goodput_bps", "delay_mean_s", "energy_full_uj"]
     rows = []
-    for keys, group in good.groupby(["technology", "water_c", "total_distance"],
-                                    dropna=False):
-        technology, water_c, distance = keys
+    group_cols = ["technology", "water_c", "total_distance"]
+    if "windspeed" in good.columns and good["windspeed"].notna().any():
+        group_cols.append("windspeed")
+    if ("cbr_period" in good.columns
+            and good["cbr_period"].nunique(dropna=True) > 1):
+        group_cols.append("cbr_period")
+    for keys, group in good.groupby(group_cols, dropna=False):
+        keymap = dict(zip(group_cols, keys))
+        technology = keymap["technology"]
+        water_c = keymap["water_c"]
+        distance = keymap["total_distance"]
         row = {
             "technology": technology,
             "water_c": water_c,
@@ -331,6 +402,10 @@ def summarize(raw: pd.DataFrame) -> pd.DataFrame:
             "propagation_s": group.timing_propagation_s.iloc[0],
             "frame_s": group.timing_frame_s.iloc[0],
         }
+        if "windspeed" in keymap:
+            row["windspeed"] = keymap["windspeed"]
+        if "cbr_period" in keymap:
+            row["cbr_period"] = keymap["cbr_period"]
         for metric in metrics:
             values = group[metric]
             row[f"{metric}_mean"] = values.mean()

@@ -7,11 +7,17 @@ import argparse
 from pathlib import Path
 
 import core
+import ambient
+import beam_check
 import diagnostic
 import distance
 import energy
+import load
 import paper
+import replication
+import robustness
 import turbidity
+import wind
 
 
 def main() -> None:
@@ -29,6 +35,18 @@ def main() -> None:
     p = sub.add_parser("diagnostic", help="acoustic equal-hop diagnostic")
     p.add_argument("--phase", choices=("pilot", "main"), default="main")
 
+    p = sub.add_parser("wind", help="acoustic wind-speed sensitivity")
+    p.add_argument("--phase", choices=("pilot", "main", "step"),
+                   default="main")
+
+    sub.add_parser("beam-check",
+                   help="compare plain and beam-LUT optical modes")
+    sub.add_parser("ambient", help="ambient-light optical pilot")
+    sub.add_parser("replication",
+                   help="25-seed validation at 1,000/1,500 m")
+    sub.add_parser("load", help="offered-load sweep at 1,000/1,500 m")
+    sub.add_parser("robustness",
+                   help="optical guard and hop-margin sensitivity")
     sub.add_parser("energy", help="recompute energy sensitivity")
     sub.add_parser("paper", help="rebuild paper tables and figures")
     sub.add_parser("all", help="run the main pipeline end to end")
@@ -43,6 +61,18 @@ def main() -> None:
             turbidity.grid(args.stage)
     elif args.command == "diagnostic":
         diagnostic.run(args.phase)
+    elif args.command == "wind":
+        wind.run(args.phase)
+    elif args.command == "beam-check":
+        beam_check.run()
+    elif args.command == "ambient":
+        ambient.run()
+    elif args.command == "replication":
+        replication.run()
+    elif args.command == "load":
+        load.run()
+    elif args.command == "robustness":
+        robustness.run()
     elif args.command == "energy":
         energy.run()
     elif args.command == "paper":
@@ -53,6 +83,13 @@ def main() -> None:
         distance.run("main")
         turbidity.grid("main")
         diagnostic.run("main")
+        wind.run("main")
+        wind.run("step")
+        ambient.run()
+        replication.run()
+        load.run()
+        robustness.run()
+        beam_check.run()
         energy.run()
         paper.build()
 

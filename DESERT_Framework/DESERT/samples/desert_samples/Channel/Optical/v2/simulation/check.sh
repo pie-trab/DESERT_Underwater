@@ -30,12 +30,21 @@ def count_words(path: Path) -> int:
 
 required = [
     sim / "run.py", sim / "core.py", sim / "distance.py",
-    sim / "turbidity.py", sim / "diagnostic.py", sim / "energy.py",
+    sim / "turbidity.py", sim / "diagnostic.py", sim / "wind.py",
+    sim / "ambient.py", sim / "replication.py", sim / "load.py",
+    sim / "robustness.py", sim / "beam_check.py", sim / "energy.py",
     sim / "paper.py", sim / "scenarios" / "acoustic_direct.tcl",
     sim / "scenarios" / "optical_chain.tcl",
     sim / "scenarios" / "acoustic_chain.tcl",
     final / "distance_runs.csv", final / "distance_summary.csv",
     final / "calibration.csv", final / "turbidity_summary.csv",
+    final / "wind_runs.csv", final / "wind_summary.csv",
+    final / "wind_step_runs.csv", final / "wind_step_summary.csv",
+    final / "load_runs.csv", final / "load_summary.csv",
+    final / "replication_runs.csv", final / "replication_summary.csv",
+    final / "ambient_summary.csv",
+    final / "guard_summary.csv", final / "hop_margin_summary.csv",
+    final / "beam_check.csv",
     final / "energy_sensitivity.csv", final / "energy_crossovers.csv",
     final / "diagnostic_runs.csv", final / "diagnostic_summary.csv",
     final / "main_results.csv", final / "diagnostic_results.csv",
@@ -139,10 +148,47 @@ if (diagnostic_results.series_role != "diagnostic_only").any():
     errors.append("diagnostic series role is wrong")
 
 cal = pd.read_csv(final / "calibration.csv").drop_duplicates("water_c")
-if sorted(cal.water_c.tolist()) != [0.1, 0.3, 0.5, 0.8, 1.2]:
+if sorted(cal.water_c.tolist()) != [0.1, 0.3, 0.5, 0.8, 1.2, 2.19]:
     errors.append("calibration table is incomplete")
 if not (final / "turbidity_summary.csv").exists():
     errors.append("turbidity summary missing")
+
+wind = pd.read_csv(final / "wind_summary.csv")
+if set(wind.technology) != {"acoustic"}:
+    errors.append("wind summary contains a non-acoustic technology")
+if sorted(wind.windspeed.unique()) != [0.0, 5.0, 10.0, 15.0, 20.0]:
+    errors.append("wind speeds are incomplete")
+if set(wind.distance_m) != {500.0, 1000.0, 1500.0}:
+    errors.append("wind distances are incomplete")
+
+beam = pd.read_csv(final / "beam_check.csv")
+if set(beam.beam_mode) != {0, 1}:
+    errors.append("beam check does not contain both modes")
+if not beam.identical_to_plain.all():
+    errors.append("beam mode differs from plain mode in the check")
+
+load = pd.read_csv(final / "load_summary.csv")
+if set(load.technology) != {"acoustic", "optical"}:
+    errors.append("load summary technology set is wrong")
+if len(load) != 20:
+    errors.append(f"load summary has {len(load)} rows, expected 20")
+
+ambient = pd.read_csv(final / "ambient_summary.csv")
+if len(ambient) != 6:
+    errors.append(f"ambient summary has {len(ambient)} rows, expected 6")
+if sorted(ambient.equivalent_depth.unique()) != ["10m", "20m", "5m"]:
+    errors.append("ambient summary depth set is wrong")
+
+guard = pd.read_csv(final / "guard_summary.csv")
+if len(guard) != 3:
+    errors.append(f"guard summary has {len(guard)} rows, expected 3")
+margin = pd.read_csv(final / "hop_margin_summary.csv")
+if len(margin) != 3:
+    errors.append(f"hop-margin summary has {len(margin)} rows, expected 3")
+
+wind_step = pd.read_csv(final / "wind_step_summary.csv")
+if len(wind_step) != 10:
+    errors.append(f"wind step has {len(wind_step)} rows, expected 10")
 
 if errors:
     print("FAIL")

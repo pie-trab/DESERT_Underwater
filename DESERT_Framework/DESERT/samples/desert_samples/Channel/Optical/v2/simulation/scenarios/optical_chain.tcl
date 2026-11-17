@@ -120,8 +120,8 @@ set opt(maxinterval)        1.0           ;# s: interference history window
 ################################
 
 if {$argc > 0} {
-    if {$argc != 13} {
-        puts "Usage: ns multi_hop_optical_v2.tcl n_relays cbr_period packet_size hop_length depth stop_time rngstream poisson_traffic attenuation_scale txpower acq_threshold_db theta beam_mode"
+    if {$argc != 13 && $argc != 14 && $argc != 15} {
+        puts "Usage: ns multi_hop_optical_v2.tcl n_relays cbr_period packet_size hop_length depth stop_time rngstream poisson_traffic attenuation_scale txpower acq_threshold_db theta beam_mode \[ambient_il \[guard_time\]\]"
         exit 1
     }
     set opt(n_relays)         [lindex $argv 0]
@@ -137,6 +137,12 @@ if {$argc > 0} {
     set opt(acq_threshold_db) [lindex $argv 10]
     set opt(theta)            [lindex $argv 11]
     set opt(beam_mode)        [lindex $argv 12]
+    if {$argc >= 14} {
+        set opt(il)           [lindex $argv 13]
+    }
+    if {$argc == 15} {
+        set opt(guard_time)   [lindex $argv 14]
+    }
 }
 
 if {$opt(beam_mode)} {

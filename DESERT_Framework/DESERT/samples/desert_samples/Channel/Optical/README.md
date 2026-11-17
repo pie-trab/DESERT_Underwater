@@ -1,7 +1,8 @@
 # Acoustic vs. multi-hop optical benchmark
 
-Two generations of the same study live here. `original/` is the first
-notebook-driven workflow; `v2/` is the consolidated, script-driven study.
+Three generations of the same study live here. `original/` is the first
+notebook-driven workflow; `v2/` is the consolidated, script-driven study;
+`v3/` is a simulation-only variant with dual-modem optical relay nodes.
 They are kept separate on purpose: the models, Tcl scripts and outputs are
 not interchangeable.
 
@@ -18,10 +19,14 @@ Optical/
 │   ├── archive/               superseded scripts and early snapshots
 │   ├── results/               generated data (git-excluded)
 │   └── reports/               local write-ups (git-excluded)
-└── v2/                        consolidated benchmark
-    ├── simulation/            one runner, scenarios, data, check
-    ├── paper/                 Typst manuscript, figures, tables
-    ├── docs/EXPERIMENT.md     method, results, limitations
+├── v2/                        consolidated benchmark
+│   ├── simulation/            one runner, scenarios, data, check
+│   ├── paper/                 Typst manuscript, figures, tables
+│   ├── docs/EXPERIMENT.md     method, results, limitations
+│   └── README.md
+└── v3/                        dual-modem optical relay nodes
+    ├── simulation/            distance/load/turbidity/energy stages
+    ├── docs/DESIGN.md         node model, rationale, limitations
     └── README.md
 ```
 
@@ -73,6 +78,26 @@ Pilot runs use `--phase pilot` or `--stage pilot`. Derived data are in
 `simulation/data/final/`; raw logs go to `simulation/data/raw/` and are not
 committed. The final paper is in `paper/` and is written in Typst. See
 `docs/EXPERIMENT.md` for parameters, results and limitations.
+
+## v3/
+
+`v3/` is a simulation-only variant of `v2/`. Every relay is one physical node
+with two optical modem heads (upstream receive, downstream transmit) under a
+shared IP layer, instead of v2's single head. It answers the hardware-realism
+question without the old two-node-per-relay artifacts: no synthetic 1 m
+intra-relay water hop and no extra TDMA slot. Results are bit-identical to v2
+in PDR, delay, active energy and frame duration, at twice the modem count.
+See `v3/README.md` and `v3/docs/DESIGN.md`.
+
+```console
+$ source <install-dir>/environment
+$ cd v3
+$ python3 simulation/run.py distance --phase main
+$ python3 simulation/run.py load
+$ python3 simulation/run.py turbidity
+$ python3 simulation/run.py energy
+$ PYTHON=python3 simulation/check.sh
+```
 
 ## Notes
 

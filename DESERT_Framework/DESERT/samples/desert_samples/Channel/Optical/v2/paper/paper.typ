@@ -45,15 +45,15 @@ This paper reports a simulation-based deployment comparison between a direct
 acoustic link and a single-head optical relay chain whose hop count scales
 with source--destination distance. The study uses the DESERT framework and
 plain optical propagation; the optical hop length is selected from a
-measured clear-water reach calibration, not hand-tuned after the results.
+measured baseline reach calibration, not hand-tuned after the results.
 The main contributions are:
 
 - a common derived-TDMA rule for both technologies;
 - distance-scaled optical relaying with an explicit unique-modem count;
 - a turbidity calibration and regime map over distance and attenuation;
 - an analytical energy sensitivity analysis with a +/-50% power envelope;
-- a diagnostic equal-hop acoustic control, reported separately because its
-  PDR is affected by a first-hop simulation artifact.
+- a diagnostic equal-hop acoustic chain, excluded from headline claims because
+  its TDMA frame delay is not a deployment alternative.
 
 The headline results are limited to direct acoustic and optical scaled-hop
 communication. The acoustic equal-hop chain is not used as a physical PDR
@@ -80,7 +80,7 @@ received packets through the standard DESERT stack; there is no second
 optical head and no synthetic intra-relay water gap.
 
 The acoustic equal-hop scenario uses the same chain topology and the same
-number of hops as the clear-water optical scenario. It is an ablation that
+number of hops as the baseline optical scenario. It is an ablation that
 isolates the cost of relaying from the optical physical layer. It is not an
 acoustic deployment recommendation.
 
@@ -120,7 +120,7 @@ the number of physical modems, which is the basis of the unique-modem count.
 == 2.3 Water model and hop calibration
 
 Plain optical propagation uses the analytic fixed-attenuation model with the
-baseline clear-water coefficient `c = 0.3 1/m`. For each water type, a
+baseline shallow-coastal coefficient `c = 0.3 1/m`. For each water type, a
 single-hop pilot sweep measured the largest hop with PDR at least 0.95. The
 working hop was fixed to 80% of that measured value. The resulting working
 hops are 40 m at `c = 0.1`, 20 m at 0.3, 12 m at 0.5, 8 m at 0.8, and 4 m at
@@ -183,28 +183,25 @@ metric block is excluded rather than silently included in the mean.
 ) <fig-main>
 
 At 100 m, both systems deliver all packets. Optical reduces mean delay from
-0.150 s to 0.0149 s and analytical energy from 1,303.5 to 64.9 uJ/bit. At
-1,000 m, both remain lossless; optical delay is 0.160 s versus 1.110 s, and
-energy is 648.6 versus 1,303.5 uJ/bit. The direct acoustic link's energy per
-delivered bit remains nearly constant in the lossless region because one TX
-and one RX occur per delivered packet. Optical energy grows with the number
-of hops because every relay adds a TX and an RX event.
+0.735 s to 0.0149 s and analytical energy from 10,828.8 to 64.9 uJ/bit. At
+1,000 m, both remain lossless; optical delay is 0.160 s versus 2.084 s, and
+energy is 648.6 versus 10,828.8 uJ/bit. The direct acoustic link's energy per
+delivered bit remains constant because one TX and one RX occur per delivered
+packet at a fixed 2.5 kbit/s airtime. Optical energy grows with the number of
+hops because every relay adds a TX and an RX event.
 
-At 1,500 m, the direct acoustic link degrades to 27.0 +/- 4.3% PDR with a
-mean delay of 2.036 s. The optical chain remains lossless with a mean delay
-of 0.239 s, but requires 76 unique modems. This is the central trade-off:
-optical avoids the acoustic long-range failure only when enough relays are
-deployed, and the relay count is itself the deployment cost.
+At 1,500 m, both links remain lossless. The acoustic mean delay is 2.840 s
+and the optical delay is 0.239 s; optical energy is 972.9 versus 10,828.8
+uJ/bit, but requires 76 unique modems. This is the central trade-off: optical
+wins delay, energy and load capacity, and pays in relay hardware.
 
-The shorter-distance points show the same pattern before any packet loss
-appears. From 50 to 500 m, direct acoustic delay rises from 0.106 s to
-0.548 s while optical delay rises from 0.0084 s to 0.0782 s. Over the same
-range, the direct acoustic energy per delivered bit stays near 1,303.5
-uJ/bit, whereas optical energy rises from 38.9 to 324.3 uJ/bit as the chain
-grows from 3 to 25 hops. Both systems deliver every packet in this interval;
-the difference is therefore a delay and hardware-cost difference, not a
-difference in loss. The optical chain already uses four unique modems at
-50 m and 26 at 500 m, while the acoustic baseline uses two throughout.
+From 50 to 500 m, direct acoustic delay rises from 0.628 s to 1.243 s while
+optical delay rises from 0.0084 s to 0.0782 s. Over the same range, the direct
+acoustic energy per delivered bit stays at 10,828.8 uJ/bit, whereas optical
+energy rises from 38.9 to 324.3 uJ/bit as the chain grows from 3 to 25 hops.
+Both systems deliver every packet in this interval. The optical chain already
+uses four unique modems at 50 m and 26 at 500 m, while the acoustic baseline
+uses two throughout.
 
 #figure(
   table(
@@ -213,14 +210,14 @@ difference in loss. The optical chain already uses four unique modems at
     align: (center, center, center),
     table.header([Distance], [Direct acoustic], [Optical scaled-hop]),
     [100 m],
-    [100%, 0.150 s, 1,303.5 uJ/bit, 2 modems],
+    [100%, 0.735 s, 10,828.8 uJ/bit, 2 modems],
     [100%, 0.0149 s, 64.9 uJ/bit, 6 modems],
     [1,000 m],
-    [100%, 1.110 s, 1,303.5 uJ/bit, 2 modems],
+    [100%, 2.084 s, 10,828.8 uJ/bit, 2 modems],
     [100%, 0.160 s, 648.6 uJ/bit, 51 modems],
     [1,500 m],
-    [27.0 +/- 4.3%, 2.036 s, 2 modems],
-    [100%, 0.239 s, 76 modems],
+    [100%, 2.840 s, 10,828.8 uJ/bit, 2 modems],
+    [100%, 0.239 s, 972.9 uJ/bit, 76 modems],
   ),
   caption: [
     Selected headline results. Modem counts are unique devices, `hops + 1`.
@@ -256,7 +253,7 @@ counted every link endpoint and double-counted intermediate relays, making a
   ],
 ) <fig-regime>
 
-The measured clear-water reach falls quickly with attenuation: 25 m at
+The calibrated baseline reach falls quickly with attenuation: 25 m at
 `c = 0.3`, 15 m at 0.5, 10 m at 0.8, and 5 m at 1.2 1/m. The scaled chain
 therefore needs many more relays in turbid water. Three cells are
 infeasible: `c = 0.8` at 1,000 m (125 hops), and `c = 1.2` at 500 m and
@@ -278,10 +275,9 @@ deployed and that every hop remains within the calibrated range.
 
 Under the baseline power assumptions there is no acoustic/optical energy
 crossover between 50 and 1,500 m; optical is lower at every point where both
-are defined. The conservative envelope (acoustic high power, optical low
-power) also has no crossover. The optimistic acoustic/pessimistic optical
-envelope crosses at approximately 663 m. The distance-scaled acoustic TX
-case has no crossover and grows very large, because maintaining a fixed
+are defined. Neither the conservative nor the optimistic ±50% envelope has a
+crossover. The distance-scaled acoustic TX case has no crossover and grows
+very large, because maintaining a fixed
 received SNR at kilometre range would require an implausible electrical
 power. These results show that absolute energy claims depend strongly on
 the assumed power model; the qualitative optical advantage is robust only
@@ -298,13 +294,13 @@ within the tested assumptions.
   ],
 ) <fig-diagnostic>
 
-The acoustic equal-hop chain is lossless at 50--200 m and 1,500 m, but shows
-0.682 PDR at 500 m and 0.586 at 1,000 m. Source `mac_tx` equals the number of
-generated packets, all losses are visible at the first edge, every downstream
-edge has PDR 1.0, and queue drops are zero. The first hop is an ideal 20 m
-acoustic link, so this is not acoustic range loss. The exact simulator
-mechanism remains unresolved. The result is therefore excluded from the
-headline PDR/delay/energy claims and appears only in this diagnostic section.
+The acoustic equal-hop chain is lossless at all distances with the
+hardware-matched PHY, but its delay grows from 2.58 s at 50 m to 391 s at
+1,500 m because 76 modems share a 2.5 kbit/s TDMA frame. The former first-hop
+loss does not appear in this configuration; its exact cause remains unresolved
+but is tied to the old acoustic parameter set. The chain is excluded from the
+headline claims because it is a topology diagnostic, not a deployment
+alternative.
 
 = 4. Discussion and limitations
 
@@ -324,12 +320,20 @@ The following limitations apply.
 - The optical channel is deterministic threshold behavior. It does not model
   time-varying fading, turbulence, pointing error, or independent node
   misalignment.
-- The beam-LUT optical mode is excluded; the paper uses plain optical
-  propagation only.
+- The beam-LUT optical mode is excluded. It swaps the SNR threshold for a
+  max-range gate, uses 5 Mbit/s/531.5--532 nm tables against a 1 Mbit/s/395 nm
+  PHY, and the Y-axis chain gives a constant azimuth factor; at `c=0.1` its
+  gate is below the 40 m working hop.
+- Wind is varied only for the acoustic link; the plain optical model has no
+  wind-speed input.
+- The 50 kHz / 180 dB / spreading-2 acoustic case is a parameter sensitivity,
+  not the baseline; it gives 27% at 1.5 km while the hardware-matched case is
+  lossless. Turbid harbor `c=2.19` is below the 2 m minimum hop and is
+  infeasible.
 - The optical chain is horizontal and assumes a shared depth. Vertical or
   irregular geometries require a different head-orientation model.
-- The acoustic equal-hop PDR is a diagnostic exception. Its first-hop loss
-  mechanism is unresolved and must not be presented as a physical result.
+- The acoustic equal-hop chain is lossless but has a 391 s frame delay at
+  1.5 km; it is a topology diagnostic, not a deployment alternative.
 - The CBR sequence-number wrap is avoided by the low offered load; higher
   loads require the MAC-level delivery accounting described in the
   experiment notes.
@@ -340,15 +344,14 @@ The following limitations apply.
 
 This paper quantified the delay, energy, and hardware trade-off between a
 direct acoustic link and a distance-scaled optical relay chain in DESERT.
-With a calibrated 20 m hop at `c = 0.3 1/m`, optics reduced delay by roughly
-an order of magnitude and energy per delivered bit by a factor of about 20
-at 100 m, while remaining lossless at 1,000 m with 51 unique modems. Direct
-acoustics remained the lowest-hardware option through 1,000 m but degraded
-near 1,500 m. Turbidity increased the relay requirement and made some
-long-distance cells infeasible. The main engineering conclusion is that
-optical multi-hop communication is attractive only when the deployment can
-afford the relay density implied by the water type; the acoustic link remains
-the robust low-hardware fallback.
+With a calibrated 20 m hop at `c = 0.3 1/m`, both links are lossless from
+50 to 1,500 m. At 1,500 m, optics reduced delay from 2.840 s to 0.239 s and
+energy per delivered bit from 10,828.8 to 972.9 uJ/bit, at the cost of 76
+versus 2 modems; at 5,000 bit/s it remained lossless while the acoustic link
+fell below 10% PDR. The earlier 50 kHz acoustic failure and apparent wind
+sensitivity were parameter artifacts. The main engineering conclusion is that
+optical multi-hop communication is a delay, energy and load trade-off paid
+for in relay hardware; the acoustic link remains the low-hardware fallback.
 
 = References
 

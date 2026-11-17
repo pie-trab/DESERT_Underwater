@@ -33,9 +33,10 @@ def run() -> pd.DataFrame:
         else:
             tx, rx = OPTICAL_TX_W, OPTICAL_RX_W
         f = row.total_distance / 1000.0
-        alpha = (0.11 * 50**2 / (1 + 50**2)
-                 + 44 * 50**2 / (4100 + 50**2)
-                 + 2.75e-4 * 50**2 + 0.003)
+        f_khz = 26.0
+        alpha = (0.11 * f_khz**2 / (1 + f_khz**2)
+                 + 44 * f_khz**2 / (4100 + f_khz**2)
+                 + 2.75e-4 * f_khz**2 + 0.003)
         scaled_tx = (ACOUSTIC_TX_W * (row.total_distance / 50.0) ** 2
                      * 10 ** (alpha * (f - 0.05) / 10.0))
         rows.append({

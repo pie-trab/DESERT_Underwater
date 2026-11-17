@@ -14,6 +14,12 @@ v2/
 │   ├── distance.py            distance sweep
 │   ├── turbidity.py           calibration and turbidity grid
 │   ├── diagnostic.py          acoustic equal-hop diagnostic
+│   ├── wind.py                acoustic wind-speed sensitivity
+│   ├── ambient.py             5/10/20 m ambient-light pilot
+│   ├── replication.py         25-seed long-distance validation
+│   ├── load.py                offered-load sweep
+│   ├── robustness.py          guard and hop-margin checks
+│   ├── beam_check.py          plain vs beam-LUT comparison
 │   ├── energy.py              analytical energy sensitivity
 │   ├── paper.py               final tables and figures
 │   ├── check.sh               consolidated validation
@@ -42,7 +48,7 @@ v2/
   distance.
 - **Optical scaled-hop:** a horizontal chain of single-head optical modems.
   At `c = 0.3 1/m` the hop is 20 m, which is 80% of the measured 25 m
-  clear-water reach.
+  baseline shallow-coastal reach.
 - **Acoustic equal-hop diagnostic:** the same chain topology and hop count as
   the optical case, using the standard acoustic PHY. Its PDR is diagnostic
   only because first-hop losses are a simulation artifact.
@@ -71,14 +77,23 @@ python3 simulation/run.py distance --phase main
 python3 simulation/run.py turbidity --stage calibrate
 python3 simulation/run.py turbidity --stage main
 python3 simulation/run.py diagnostic --phase main
+python3 simulation/run.py wind --phase main
+python3 simulation/run.py wind --phase step
+python3 simulation/run.py ambient
+python3 simulation/run.py replication
+python3 simulation/run.py load
+python3 simulation/run.py robustness
+python3 simulation/run.py beam-check
 python3 simulation/run.py energy
 python3 simulation/run.py paper
 simulation/check.sh
 ```
 
-Pilot variants use `distance --phase pilot`, `diagnostic --phase pilot`, or
-`turbidity --stage pilot`. `simulation/run.py all` runs the main distance,
-turbidity, diagnostic, energy, and paper stages; calibration must exist first.
+Pilot variants use `distance --phase pilot`, `diagnostic --phase pilot`,
+`wind --phase pilot`, or `turbidity --stage pilot`. `simulation/run.py all`
+runs the main distance, turbidity, diagnostic, wind, energy, and paper stages;
+calibration must exist first. `wind --phase step`, `ambient`, `replication`,
+`load`, `robustness` and `beam-check` are separate fixed-value checks.
 
 ## Final results
 
@@ -86,13 +101,24 @@ At `c = 0.3 1/m`:
 
 | Distance | Direct acoustic | Optical scaled-hop |
 |---:|---|---|
-| 100 m | 100%, 0.150 s, 1,303.5 uJ/bit, 2 modems | 100%, 0.0149 s, 64.9 uJ/bit, 6 modems |
-| 1,000 m | 100%, 1.110 s, 1,303.5 uJ/bit, 2 modems | 100%, 0.160 s, 648.6 uJ/bit, 51 modems |
-| 1,500 m | 27.0 +/- 4.3%, 2.036 s, 2 modems | 100%, 0.239 s, 76 modems |
+| 100 m | 100%, 0.735 s, 10,828.8 uJ/bit, 2 modems | 100%, 0.0149 s, 64.9 uJ/bit, 6 modems |
+| 1,000 m | 100%, 2.084 s, 10,828.8 uJ/bit, 2 modems | 100%, 0.160 s, 648.6 uJ/bit, 51 modems |
+| 1,500 m | 100%, 2.840 s, 10,828.8 uJ/bit, 2 modems | 100%, 0.239 s, 972.9 uJ/bit, 76 modems |
 
-The optical chain is lossless in every feasible modeled cell, but its unique
-modem count grows with distance and turbidity. Direct acoustic remains the
-low-hardware option through 1 km and degrades near 1.5 km.
+Both links are lossless at the headline load. The optical chain wins delay,
+energy and load capacity, but its unique modem count grows with distance and
+turbidity. Direct acoustic remains the low-hardware option, at the cost of
+delay and energy.
+
+## Wind sensitivity
+
+The plain optical model has no wind-speed input; the wind sweep therefore
+applies to the acoustic link. With the hardware-matched acoustic PHY, PDR is
+100% and delay is unchanged from 0 to 20 m/s at 500, 1,000 and 1,500 m; a
+1 m/s step from 5 to 14 m/s at 1.5 km is also flat. The earlier 50 kHz
+baseline showed 100, 100, 27, 0 and 0% at 0, 5, 10, 15 and 20 m/s at 1.5 km;
+that was a high-absorption parameter artifact, not a hardware-independent
+wind limit.
 
 ## Turbidity
 
@@ -114,24 +140,35 @@ the 100-hop cap and are marked INFEASIBLE.
 
 Energy is analytical from MAC TX/RX event counts and configured airtime. The
 baseline assumptions are 20 W TX / 4 W RX for acoustics and 10 W TX / 1.5 W RX
-for optics. The +/-50% power envelope has no crossover in the conservative
-case and an interpolated crossover at about 663 m in the optimistic
-acoustic/pessimistic optical extreme. The distance-scaled acoustic TX case is
-a sensitivity warning, not a calibrated modem model.
+for optics. Optical is lower at every distance in the baseline and in both
+±50% envelope extremes; there is no crossover. The distance-scaled acoustic TX
+case is a sensitivity warning, not a calibrated modem model.
 
-## Diagnostic artifact
+## Acoustic equal-hop diagnostic
 
-The acoustic equal-hop chain is not a physical PDR curve. Losses occur at the
-first hop while every downstream edge is 1.0 and queues are empty; the first
-hop is an ideal 20 m link. The exact simulator mechanism is unresolved, so the
-curve is excluded from headline claims.
+The acoustic equal-hop chain is lossless at all distances with the
+hardware-matched PHY, but its delay grows from 2.58 s at 50 m to 391 s at
+1,500 m because 76 modems share a 2.5 kbit/s TDMA frame. The former first-hop
+loss does not appear in this configuration. The chain is excluded from the
+headline claims because it is a topology diagnostic, not a deployment
+alternative.
 
 ## Limitations
 
 - Analytical energy assumptions; not measured modem power.
 - Deterministic optical threshold channel; no fading, turbulence or
   independent misalignment.
-- Beam-LUT mode excluded.
+- Beam-LUT mode excluded: it replaces the SNR threshold with a max-range gate,
+  uses 5 Mbit/s/531.5--532 nm tables against a 1 Mbit/s/395 nm PHY, and the
+  Y-axis chain gives a constant azimuth factor. At `c=0.1` its gate is below
+  the 40 m working hop, so its results would be artifacts.
+- Wind sensitivity is acoustic-only and is flat at the hardware-matched
+  operating point; the plain optical model has no wind input.
+- The 50 kHz / 180 dB / spreading-2 acoustic case is a parameter sensitivity,
+  not the baseline; it gives 27% at 1.5 km while the hardware-matched case is
+  lossless.
+- Turbid harbor `c=2.19` has a 1.6 m working hop, below the 2 m minimum; all
+  harbor cells are INFEASIBLE.
 - Horizontal chain at a shared depth.
 - CBR sequence-wrap avoided by the selected low load.
 - Simulation study of configured models, not a field trial.
@@ -140,10 +177,12 @@ curve is excluded from headline claims.
 
 - The study is consolidated into `simulation/`, `paper/` and `docs/`;
   intermediate result trees and legacy entry points were removed.
-- The final derived dataset and paper figures are committed.
+- The final derived dataset and paper figures are generated, including the
+  hardware-matched acoustic baseline, wind step, ambient pilot, 25-seed
+  replication, load sweep, guard/hop-margin checks and beam-mode check.
 - `simulation/check.sh` validates data, numbers, manuscript structure and
   claim separation.
-- The Typst manuscript source is provided; the `typst` binary is not
-  installed in this environment, so no PDF was compiled locally.
+- The Typst manuscript source is provided; Typst is installed in this
+  environment and the report builds locally.
 - Author-supplied items remain: verified bibliography entries, author names
   and affiliation, and target-venue formatting.

@@ -114,6 +114,9 @@ def plot_series(table: pd.DataFrame, path: Path, title: str,
 
 def plot_regime() -> None:
     summary = pd.read_csv(core.FINAL / "turbidity_summary.csv")
+    # The turbid-harbor c=2.19 row is all INFEASIBLE; keep it in the table
+    # and text, but not in the heat map.
+    summary = summary[summary.water_c <= 1.2]
     c_values = sorted(summary.water_c.dropna().unique())
     distances = sorted(summary.distance_m.unique())
     fig, axes = plt.subplots(1, 2, figsize=(13, 5), dpi=160)
@@ -135,19 +138,22 @@ def plot_regime() -> None:
         arr = ratio.to_numpy(dtype=float)
         image = ax.imshow(
             arr, aspect="auto", origin="lower",
-            extent=[min(distances) - 25, max(distances) + 25,
-                    min(c_values) - 0.1, max(c_values) + 0.1],
             cmap="coolwarm", vmin=0, vmax=max(2.0, np.nanmax(arr)))
         fig.colorbar(image, ax=ax, label="ratio (>1 favors optical)")
-        for c in ratio.index:
-            for d in ratio.columns:
+        for i, c in enumerate(ratio.index):
+            for j, d in enumerate(ratio.columns):
                 state = status.loc[c, d]
                 if state == "INFEASIBLE":
-                    ax.text(d, c, "INFEASIBLE", ha="center", va="center",
-                            fontsize=7, rotation=45)
+                    ax.text(j, i, "INFEASIBLE", ha="center", va="center",
+                            fontsize=6, rotation=45)
                 elif np.isfinite(ratio.loc[c, d]):
-                    ax.text(d, c, f"{ratio.loc[c, d]:.1f}", ha="center",
-                            va="center", fontsize=8)
+                    value = ratio.loc[c, d]
+                    text = f"{value:.0f}" if value >= 10 else f"{value:.1f}"
+                    ax.text(j, i, text, ha="center", va="center", fontsize=6)
+        ax.set_xticks(range(len(ratio.columns)),
+                      [f"{d:g}" for d in ratio.columns])
+        ax.set_yticks(range(len(ratio.index)),
+                      [f"{c:g}" for c in ratio.index])
         ax.set_xlabel("Distance (m)")
         ax.set_ylabel("c (1/m)")
         ax.set_title(title)
@@ -228,6 +234,112 @@ def plot_energy() -> None:
     plt.close(fig)
 
 
+def plot_wind() -> None:
+    path = core.FINAL / "wind_summary.csv"
+    if not path.exists():
+        return
+    summary = pd.read_csv(path)
+    summary = summary[summary.technology == "acoustic"]
+    distances = sorted(summary.distance_m.unique())
+    colors = ["tab:blue", "tab:orange", "tab:green"]
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.5), dpi=160)
+    specs = [
+        (axes[0], "pdr_mean", "pdr_ci95", "PDR (%)", 100.0),
+        (axes[1], "delay_mean_s_mean", "delay_mean_s_ci95",
+         "Mean delay (s)", 1.0),
+    ]
+    for ax, metric, ci_metric, ylabel, scale in specs:
+        for color, distance in zip(colors, distances):
+            group = summary[summary.distance_m == distance].sort_values(
+                "windspeed")
+            y = group[metric] * scale
+            yerr = group[ci_metric] * scale
+            finite = np.isfinite(y)
+            ax.errorbar(group.windspeed[finite], y[finite],
+                        yerr=yerr[finite], fmt="o-", color=color,
+                        capsize=3, label=f"{distance:g} m")
+        ax.set_xlabel("Wind speed (m/s)")
+        ax.set_ylabel(ylabel)
+        ax.grid(True, linestyle=":", alpha=0.6)
+        ax.legend(fontsize=8)
+    axes[0].set_ylim(-5, 105)
+    fig.suptitle("Direct acoustic link: wind-speed sensitivity")
+    fig.tight_layout()
+    fig.savefig(core.PAPER / "figures" / "fig_wind_sensitivity.png",
+                bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_wind_pdr() -> None:
+    path = core.FINAL / "wind_summary.csv"
+    if not path.exists():
+        return
+    summary = pd.read_csv(path)
+    summary = summary[summary.technology == "acoustic"]
+    distances = sorted(summary.distance_m.unique())
+    colors = ["tab:blue", "tab:orange", "tab:green"]
+    fig, ax = plt.subplots(figsize=(6.5, 4.5), dpi=160)
+    for color, distance in zip(colors, distances):
+        group = summary[summary.distance_m == distance].sort_values(
+            "windspeed")
+        ax.errorbar(group.windspeed, group.pdr_mean * 100.0,
+                    yerr=group.pdr_ci95 * 100.0, fmt="o-", color=color,
+                    capsize=3, label=f"{distance:g} m")
+    ax.set_xlabel("Wind speed (m/s)")
+    ax.set_ylabel("PDR (%)")
+    ax.set_ylim(-5, 105)
+    ax.grid(True, linestyle=":", alpha=0.6)
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    fig.savefig(core.PAPER / "figures" / "fig_wind_pdr.png",
+                bbox_inches="tight")
+    plt.close(fig)
+
+
+
+def plot_load() -> None:
+    path = core.FINAL / "load_summary.csv"
+    if not path.exists():
+        return
+    summary = pd.read_csv(path)
+    summary["offered_bps"] = 1000.0 / summary.cbr_period
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8), dpi=160)
+    specs = [
+        ("pdr_mean", "PDR (%)", 100.0, False),
+        ("goodput_bps_mean", "Goodput (bit/s)", 1.0, True),
+        ("delay_mean_s_mean", "Mean delay (s)", 1.0, True),
+        ("energy_per_bit_uj_mean", "Energy per delivered bit (uJ/bit)",
+         1.0, True),
+    ]
+    colors = {(1000.0, "acoustic"): "tab:orange",
+              (1500.0, "acoustic"): "tab:red",
+              (1000.0, "optical"): "tab:blue",
+              (1500.0, "optical"): "tab:cyan"}
+    for ax, (metric, ylabel, scale, logy) in zip(axes.flat, specs):
+        for (distance, technology), color in sorted(colors.items()):
+            group = summary[(summary.distance_m == distance)
+                            & (summary.technology == technology)]
+            group = group.sort_values("offered_bps")
+            ax.plot(group.offered_bps, group[metric] * scale, "o-",
+                    color=color, label=f"{technology} {distance:g} m")
+        ax.set_xscale("log")
+        loads = sorted(summary.offered_bps.unique())
+        ax.set_xticks(loads)
+        ax.set_xticklabels([f"{x:g}" for x in loads])
+        ax.minorticks_off()
+        ax.set_xlabel("Offered load (bit/s)")
+        ax.set_ylabel(ylabel)
+        ax.grid(True, which="both", linestyle=":", alpha=0.6)
+        if logy:
+            ax.set_yscale("log")
+        ax.legend(fontsize=7)
+    fig.suptitle("Offered-load sweep: direct acoustic vs optical chain")
+    fig.tight_layout()
+    fig.savefig(core.PAPER / "figures" / "fig_load_sweep.png",
+                bbox_inches="tight")
+    plt.close(fig)
+
+
 def build() -> None:
     core.PAPER.mkdir(parents=True, exist_ok=True)
     (core.PAPER / "figures").mkdir(parents=True, exist_ok=True)
@@ -245,4 +357,7 @@ def build() -> None:
     plot_regime()
     plot_hop()
     plot_energy()
+    plot_wind()
+    plot_wind_pdr()
+    plot_load()
     print("paper tables and figures rebuilt")

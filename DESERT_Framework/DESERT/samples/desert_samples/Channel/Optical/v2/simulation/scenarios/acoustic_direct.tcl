@@ -75,7 +75,7 @@ set opt(txpower)            180.0     ;# dB re 1 uPa at 1 m: source level
 # the link degenerated into a binary ~1147 m cliff (measured: 100 %
 # delivery at 1146 m, zero at 1147 m).
 set opt(acquisition_db)     0.0       ;# dB: PHY acquisition threshold
-set opt(max_tx_range)       200.0     ;# m: PHY range cutoff
+set opt(max_tx_range)       200.0     ;# m: PHY range parameter (not a hard cutoff with optimization off)
 set opt(spreading)          2         ;# practical spreading coefficient
 set opt(windspeed)          10.0      ;# m/s: environmental propagation input
 set opt(shipping)           1         ;# shipping activity used by propagation
@@ -99,8 +99,8 @@ set opt(maxinterval)        200.0     ;# s: interference history window
 ################################
 
 if {$argc > 0} {
-    if {$argc != 8} {
-        puts "Usage: ns single_link_acoustic_v2.tcl n_relays cbr_period packet_size distance depth stop_time rngstream poisson_traffic"
+    if {$argc != 8 && $argc != 9 && $argc != 14} {
+        puts "Usage: ns single_link_acoustic_v2.tcl n_relays cbr_period packet_size distance depth stop_time rngstream poisson_traffic \[windspeed \[freq bw bitrate txpower spreading\]\]"
         exit 1
     }
     set opt(n_relays)        [lindex $argv 0]   ;# accepted, ignored (single link)
@@ -111,6 +111,16 @@ if {$argc > 0} {
     set opt(stoptime)        [lindex $argv 5]
     set opt(rngstream)       [lindex $argv 6]
     set opt(poisson_traffic) [lindex $argv 7]
+    if {$argc >= 9} {
+        set opt(windspeed)   [lindex $argv 8]
+    }
+    if {$argc == 14} {
+        set opt(freq)        [lindex $argv 9]
+        set opt(bw)          [lindex $argv 10]
+        set opt(bitrate)     [lindex $argv 11]
+        set opt(txpower)     [lindex $argv 12]
+        set opt(spreading)   [lindex $argv 13]
+    }
 }
 
 ################################

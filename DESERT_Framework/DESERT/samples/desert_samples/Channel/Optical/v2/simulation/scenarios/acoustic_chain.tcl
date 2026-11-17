@@ -35,14 +35,14 @@ set opt(starttime)          0.1       ;# s: CBR start time
 set opt(stoptime)           100.0     ;# s: CBR stop time
 
 # Acoustic physical layer, identical to the direct acoustic baseline.
-set opt(freq)               50000.0
-set opt(bw)                 26000.0
+set opt(freq)               26000.0
+set opt(bw)                 16000.0
 set opt(propagation_speed)  1500.0
-set opt(bitrate)            20768.0
-set opt(txpower)            180.0
+set opt(bitrate)            2500.0
+set opt(txpower)            175.0
 set opt(acquisition_db)     0.0
 set opt(max_tx_range)       200.0
-set opt(spreading)          2
+set opt(spreading)          1.75
 set opt(windspeed)          10.0
 set opt(shipping)           1
 
@@ -62,8 +62,8 @@ set opt(maxinterval)        200.0
 ################################
 
 if {$argc > 0} {
-    if {$argc != 8} {
-        puts "Usage: ns acoustic_chain_v3.tcl n_relays cbr_period packet_size total_distance depth stop_time rngstream poisson_traffic"
+    if {$argc != 8 && $argc != 9 && $argc != 14} {
+        puts "Usage: ns acoustic_chain_v3.tcl n_relays cbr_period packet_size total_distance depth stop_time rngstream poisson_traffic \[windspeed \[freq bw bitrate txpower spreading\]\]"
         exit 1
     }
     set opt(n_relays)        [lindex $argv 0]
@@ -74,6 +74,16 @@ if {$argc > 0} {
     set opt(stoptime)        [lindex $argv 5]
     set opt(rngstream)       [lindex $argv 6]
     set opt(poisson_traffic) [lindex $argv 7]
+    if {$argc >= 9} {
+        set opt(windspeed)   [lindex $argv 8]
+    }
+    if {$argc == 14} {
+        set opt(freq)        [lindex $argv 9]
+        set opt(bw)          [lindex $argv 10]
+        set opt(bitrate)     [lindex $argv 11]
+        set opt(txpower)     [lindex $argv 12]
+        set opt(spreading)   [lindex $argv 13]
+    }
 }
 
 set opt(nn)          [expr {$opt(n_relays) + 2}]
